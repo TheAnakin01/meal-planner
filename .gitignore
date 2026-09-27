@@ -24,3 +24,5 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+*.pem
+.pnpm-debug.log*
