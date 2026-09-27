@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { type PlanSlot, bestPortion, generateWeek, swapMeal } from "@/lib/planner";
+import { swapMealForCurrentUser } from "@/lib/plan-mutations";
+import { type PlanSlot, generateWeek } from "@/lib/planner";
 import { type WeekPlan, getOrCreateWeekPlan, plannerProfile, savePlanSlots } from "@/lib/plan-server";
 import { getCurrentProfile } from "@/lib/profile-server";
 import { createClient } from "@/lib/supabase/server";
@@ -20,18 +21,6 @@ async function load(): Promise<{ profile: ProfileInput; plan: WeekPlan } | null>
   return { profile, plan: await getOrCreateWeekPlan(profile) };
 }
 
-// With leftovers on, tomorrow's lunch follows tonight's dinner.
-function syncLeftover(slots: PlanSlot[], plan: WeekPlan, day: number): PlanSlot[] {
-  if (!plan.leftovers || day >= 6) return slots;
-  const dinner = slots.find((s) => s.day === day && s.meal === "dinner");
-  const recipe = dinner && plan.recipes.find((r) => r.id === dinner.recipeId);
-  return slots.map((s) =>
-    recipe && s.day === day + 1 && s.meal === "lunch" && s.isLeftover && !s.locked
-      ? { ...s, recipeId: recipe.id, portion: bestPortion(recipe.perServing.kcal, plan.targets.meals.lunch.calories).portion }
-      : s,
-  );
-}
-
 function done(notes?: string[]): Result {
   revalidatePath("/week");
   revalidatePath("/dashboard");
@@ -43,17 +32,8 @@ export async function swapMealAction(day: unknown, meal: unknown): Promise<Resul
   const d = daySchema.safeParse(day);
   const m = mealSchema.safeParse(meal);
   if (!d.success || !m.success) return { ok: false, error: "Invalid meal." };
-  const loaded = await load();
-  if (!loaded) return { ok: false, error: "Please fill in your details first." };
-  const { profile, plan } = loaded;
-
-  if (plan.slots.some((s) => s.day === d.data && s.meal === m.data && s.locked)) {
-    return { ok: false, error: "This meal is locked. Unlock it to swap." };
-  }
-  const swapped = swapMeal(plan.recipes, plannerProfile(profile), plan.targets, plan.slots, d.data, m.data, newSeed());
-  if (!swapped) return { ok: false, error: "No other recipe suits you for this meal yet." };
-  await savePlanSlots(plan.planId, m.data === "dinner" ? syncLeftover(swapped, plan, d.data) : swapped);
-  return done();
+  const r = await swapMealForCurrentUser(d.data, m.data);
+  return r.ok ? done() : r;
 }
 
 export async function toggleLockAction(day: unknown, meal: unknown): Promise<Result> {

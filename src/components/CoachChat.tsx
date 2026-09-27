@@ -21,15 +21,19 @@ const primaryButton =
 const secondaryButton =
   "rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800";
 
-export default function CoachChat({ enabled, messages, remaining }: Props) {
+export default function CoachChat({ enabled, messages, remaining: initialRemaining }: Props) {
   const [pending, startTransition] = useTransition();
+  // The chat keeps its own copy: new messages come back from the server action directly,
+  // without reloading the page (which used to fail after the slow AI call).
+  const [items, setItems] = useState(messages);
+  const [remaining, setRemaining] = useState(initialRemaining);
   const [error, setError] = useState("");
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState<string | null>(null); // shown while waiting for the reply
   const [agreed, setAgreed] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => endRef.current?.scrollIntoView({ block: "end" }), [messages.length, asked]);
+  useEffect(() => endRef.current?.scrollIntoView({ block: "end" }), [items.length, asked]);
 
   function run(task: () => Promise<{ ok: true } | { ok: false; error: string }>, after?: () => void) {
     setError("");
@@ -55,7 +59,22 @@ export default function CoachChat({ enabled, messages, remaining }: Props) {
     if (!q) return;
     setAsked(q);
     setQuestion("");
-    run(() => askCoachAction(q));
+    run(async () => {
+      const r = await askCoachAction(q);
+      setItems((current) => [...current, ...r.added]);
+      if (r.added.some((m) => m.role === "user")) setRemaining((n) => Math.max(0, n - 1));
+      return r;
+    });
+  }
+
+  function resolve(id: number, confirm: boolean) {
+    run(async () => {
+      const r = await resolveCoachActionAction(id, confirm);
+      if (r.ok) {
+        setItems((current) => current.map((m) => (m.id === id ? { ...m, actionStatus: r.status, actionResult: r.result } : m)));
+      }
+      return r;
+    });
   }
 
   if (!enabled) {
@@ -98,7 +117,7 @@ export default function CoachChat({ enabled, messages, remaining }: Props) {
   return (
     <div className="space-y-4">
       <div className="space-y-3" aria-live="polite">
-        {messages.length === 0 && !asked && (
+        {items.length === 0 && !asked && (
           <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
             <p>Ask about your plan, protein, portions or cooking. Try:</p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -110,14 +129,9 @@ export default function CoachChat({ enabled, messages, remaining }: Props) {
             </div>
           </div>
         )}
-        {messages.map((m) =>
+        {items.map((m) =>
           m.action ? (
-            <ActionCard
-              key={m.id}
-              message={m}
-              pending={pending}
-              onResolve={(confirm) => run(() => resolveCoachActionAction(m.id, confirm))}
-            />
+            <ActionCard key={m.id} message={m} pending={pending} onResolve={(confirm) => resolve(m.id, confirm)} />
           ) : (
             <Bubble key={m.id} role={m.role} text={m.content} />
           ),
@@ -175,7 +189,7 @@ export default function CoachChat({ enabled, messages, remaining }: Props) {
       <div className="flex flex-wrap gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
         <button
           type="button"
-          disabled={pending || messages.length === 0}
+          disabled={pending || items.length === 0}
           onClick={() => window.confirm("Delete your whole chat with the coach?") && run(() => clearCoachHistoryAction())}
           className={secondaryButton}
         >

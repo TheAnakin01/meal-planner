@@ -45,8 +45,12 @@ async function callGemini(
   const apiKey = process.env.GEMINI_API_KEY?.trim().replace(/^["']|["']$/g, "");
   if (!apiKey) return { ok: false, error: "not_configured" };
 
+  // Stop trying further models after ~75 s so a request always finishes well within the page's time limit.
+  const deadline = Date.now() + 75_000;
   let lastError: GeminiError = "busy";
   for (const model of GEMINI_MODELS) {
+    const timeLeft = deadline - Date.now();
+    if (timeLeft < 5_000) break;
     let response: Response;
     try {
       response = await fetch(`${API_BASE}/${model}:generateContent`, {
@@ -59,7 +63,7 @@ async function callGemini(
           ...(tools ? { tools } : {}),
         }),
         cache: "no-store",
-        signal: AbortSignal.timeout(90_000),
+        signal: AbortSignal.timeout(Math.min(60_000, timeLeft)),
       });
     } catch {
       lastError = "unavailable";

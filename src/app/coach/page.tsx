@@ -35,7 +35,12 @@ export default async function CoachPage() {
           Today
         </Link>
       </div>
-      <CoachChat enabled={enabled} messages={messages} remaining={allowance.remaining} />
+      <CoachChat
+        key={`${enabled}-${messages.length}-${messages.at(-1)?.id ?? 0}`}
+        enabled={enabled}
+        messages={messages}
+        remaining={allowance.remaining}
+      />
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
         General guidance only, not medical advice. For health conditions, talk to a doctor or registered dietitian. In an
         emergency call 112.

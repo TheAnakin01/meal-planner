@@ -591,8 +591,12 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
 - [x] **Step 27 — Coach actions:** swap meal / add to list via validated function calls.
       Gemini function calling (`COACH_TOOLS` in `src/lib/coach-actions.ts`); calls are parsed/validated (max 3) and stored
       as PROPOSED action cards (migration 0009: `action`, `action_status`, `action_result`; users may update only the
-      status columns). Nothing changes until the user taps Confirm; `resolveCoachActionAction` then runs the normal
-      `swapMealAction` (planner picks a safe recipe) / `addCustomItemAction`. Tested live: 3.8 Flash, 2 s, both calls correct.
+      status columns). Nothing changes until the user taps Confirm; `resolveCoachActionAction` then runs the shared
+      `swapMealForCurrentUser` (planner picks a safe recipe) / `addShoppingItemForCurrentUser` (`src/lib/plan-mutations.ts`).
+      Tested live: 3.8 Flash, 2 s, both calls correct.
+      Fix 2026-09-27: asking the coach showed the error screen, then the answer after "Try again". Coach actions no longer
+      call revalidatePath (which re-rendered /coach after the slow AI call); they return the saved messages / new status and
+      the chat updates itself. Gemini calls share a ~75 s deadline across model fallbacks.
 
 **Phase E — Add-ons**
 - [ ] **Step 28 — Food diary + barcode:** manual log, recipe log, Open Food Facts barcode scan (with attribution).

@@ -38,40 +38,59 @@ export async function pruneOldMessages() {
   await supabase.from("coach_messages").delete().eq("user_id", userId).lt("created_at", retentionCutoff());
 }
 
+export const COACH_MESSAGE_COLUMNS = "id, role, content, created_at, action, action_status, action_result";
+
+export interface CoachMessageRow {
+  id: number;
+  role: "user" | "model";
+  content: string;
+  created_at: string;
+  action: unknown;
+  action_status: CoachMessage["actionStatus"];
+  action_result: string | null;
+}
+
+export function rowToCoachMessage(m: CoachMessageRow): CoachMessage {
+  const action = coachActionSchema.safeParse(m.action);
+  return {
+    id: Number(m.id),
+    role: m.role,
+    content: m.content,
+    createdAt: m.created_at,
+    action: action.success ? action.data : null,
+    actionStatus: action.success ? m.action_status : null,
+    actionResult: m.action_result,
+  };
+}
+
 export async function getCoachHistory(limit = 60): Promise<CoachMessage[]> {
   const { supabase, userId } = await coachContext();
   if (!userId) return [];
   const { data, error } = await supabase
     .from("coach_messages")
-    .select("id, role, content, created_at, action, action_status, action_result")
+    .select(COACH_MESSAGE_COLUMNS)
     .eq("user_id", userId)
     .gte("created_at", retentionCutoff())
     .order("created_at", { ascending: false })
     .limit(limit)
-    .returns<
-      {
-        id: number;
-        role: "user" | "model";
-        content: string;
-        created_at: string;
-        action: unknown;
-        action_status: CoachMessage["actionStatus"];
-        action_result: string | null;
-      }[]
-    >();
+    .returns<CoachMessageRow[]>();
   if (error) throw new Error(`Could not load coach messages: ${error.message}`);
-  return (data ?? []).reverse().map((m) => {
-    const action = coachActionSchema.safeParse(m.action);
-    return {
-      id: Number(m.id),
-      role: m.role,
-      content: m.content,
-      createdAt: m.created_at,
-      action: action.success ? action.data : null,
-      actionStatus: action.success ? m.action_status : null,
-      actionResult: m.action_result,
-    };
-  });
+  return (data ?? []).reverse().map(rowToCoachMessage);
+}
+
+// Saves messages for the current user and returns them as stored (with ids).
+export async function saveCoachMessages(
+  rows: { role: "user" | "model"; content: string; action?: unknown; action_status?: "proposed" }[],
+): Promise<CoachMessage[]> {
+  const { supabase, userId } = await coachContext();
+  if (!userId || rows.length === 0) return [];
+  const { data, error } = await supabase
+    .from("coach_messages")
+    .insert(rows.map((r) => ({ user_id: userId, ...r })))
+    .select(COACH_MESSAGE_COLUMNS)
+    .returns<CoachMessageRow[]>();
+  if (error) throw new Error(`Could not save coach messages: ${error.message}`);
+  return (data ?? []).map(rowToCoachMessage).sort((a, b) => a.id - b.id);
 }
 
 // Questions left for this user in the rolling 24 hours, and whether the shared daily budget is used up.

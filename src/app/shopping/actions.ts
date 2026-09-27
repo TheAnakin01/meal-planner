@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { addShoppingItemForCurrentUser } from "@/lib/plan-mutations";
 import { weekStart } from "@/lib/planner";
 import { STORE_IDS } from "@/lib/stores";
 import { getCurrentProfile } from "@/lib/profile-server";
@@ -52,15 +53,8 @@ export async function setCheckedAction(ingredientId: unknown, checked: unknown, 
 }
 
 export async function addCustomItemAction(label: unknown): Promise<Result> {
-  const parsed = z.string().trim().min(1, "Type an item first.").max(80, "Keep it under 80 characters.").safeParse(label);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-  const ctx = await context();
-  if (!ctx) return { ok: false, error: "Please sign in again." };
-
-  const { error } = await ctx.supabase
-    .from("shopping_list_items")
-    .insert({ user_id: ctx.userId, week_start: ctx.week, label: parsed.data });
-  return failed(error, "addCustomItem") ?? done();
+  const r = await addShoppingItemForCurrentUser(label);
+  return r.ok ? done() : r;
 }
 
 export async function setCustomCheckedAction(itemId: unknown, checked: unknown): Promise<Result> {
