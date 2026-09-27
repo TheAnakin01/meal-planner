@@ -26,6 +26,9 @@ export default async function WeekPage() {
     return new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(date);
   };
 
+  const dayMonth = (day: number) => label(day).split(" ").slice(1).join(" ");
+  const range = `${dayMonth(0)} – ${dayMonth(6)}`;
+
   const days: WeekDay[] = Array.from({ length: 7 }, (_, day) => ({
     day,
     label: label(day),
@@ -48,22 +51,20 @@ export default async function WeekPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 sm:py-12">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">This week</h1>
-        <div className="flex shrink-0 gap-2">
-          <Link
-            href="/shopping"
-            className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
-          >
-            Shopping list
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          >
-            Today
-          </Link>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">{range}</p>
+          <h1 className="text-3xl font-bold tracking-tight">This week</h1>
         </div>
+        <Link
+          href="/shopping"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-800 active:scale-95"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M6 6h15l-1.5 9h-12zM6 6 5 3H2M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM18 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+          </svg>
+          Shopping list
+        </Link>
       </div>
       <WeekView
         days={days}
