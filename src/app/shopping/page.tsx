@@ -31,9 +31,16 @@ export default async function ShoppingPage() {
           Meal plan
         </Link>
       </div>
-      <ShoppingListView list={data.list} checkedIds={data.checkedIds} custom={data.custom} />
+      <ShoppingListView
+        list={data.list}
+        checkedIds={data.checkedIds}
+        custom={data.custom}
+        preferredStore={profile.preferredStore}
+        shareTitle={`Shopping list – week of ${weekLabel}`}
+      />
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
-        Amounts are rounded up to whole packs. Changing your meal plan updates this list; your ticks are kept.
+        Amounts are rounded up to whole packs. Changing your meal plan updates this list; your ticks are kept. &ldquo;Buy&rdquo;
+        links open the store&apos;s own search page — prices and delivery are up to the store.
       </p>
     </main>
   );

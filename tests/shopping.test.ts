@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { PlanSlot } from "@/lib/planner";
-import { type ShoppingIngredient, type ShoppingRecipe, buildShoppingList, formatAmount, formatPacks } from "@/lib/shopping";
+import {
+  type ShoppingIngredient,
+  type ShoppingRecipe,
+  buildShareText,
+  buildShoppingList,
+  formatAmount,
+  formatPacks,
+  whatsappShareUrl,
+} from "@/lib/shopping";
 
 const ing = (id: number, name: string, extra: Partial<ShoppingIngredient> = {}): ShoppingIngredient => ({
   id,
@@ -111,5 +119,44 @@ describe("formatting", () => {
     expect(formatPacks({ packs: 2, packSize: 500, unit: "g" })).toBe("Buy 2 × 500 g");
     expect(formatPacks({ packs: 1, packSize: 1000, unit: "g" })).toBe("Buy 1 × 1 kg");
     expect(formatPacks({ packs: 1, packSize: 6, unit: "piece" })).toBe("Buy 1 pack of 6");
+  });
+});
+
+describe("buildShareText", () => {
+  const list = buildShoppingList(
+    [slot(0, "lunch", 10, 2), slot(1, "breakfast", 11, 2)],
+    [dalRice, bhurji],
+    ingredients,
+    new Set([6]),
+  );
+
+  it("lists unticked items by aisle, with WhatsApp bold headings and extras", () => {
+    const text = buildShareText(list, new Set([1]), [{ label: "dish soap", checked: false }, { label: "bread", checked: true }], "Shopping list – week of 28 Sep");
+    expect(text).toBe(
+      [
+        "Shopping list – week of 28 Sep",
+        "",
+        "*Dairy & eggs*",
+        "• egg – 4 pieces",
+        "",
+        "*Dals & pulses*",
+        "• toor dal – 75 g",
+        "",
+        "*Oils & ghee*",
+        "• ghee – 23 ml",
+        "",
+        "*Extra items*",
+        "• dish soap",
+      ].join("\n"),
+    );
+  });
+
+  it("says so when everything is ticked", () => {
+    const allIds = new Set(list.aisles.flatMap((a) => a.items.map((i) => i.ingredientId)));
+    expect(buildShareText(list, allIds, [], "List")).toBe("List\n\nEverything is ticked off!");
+  });
+
+  it("makes a WhatsApp link with the text encoded", () => {
+    expect(whatsappShareUrl("a & b\n• c")).toBe("https://wa.me/?text=a%20%26%20b%0A%E2%80%A2%20c");
   });
 });

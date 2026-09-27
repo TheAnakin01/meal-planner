@@ -108,6 +108,29 @@ export function formatAmount(amount: number, unit: ShoppingItem["unit"]): string
   return `${amount} ${unit}`;
 }
 
+// Plain-text list of what's still to buy (unticked), for WhatsApp / copy / share.
+export function buildShareText(
+  list: ShoppingList,
+  checkedIds: ReadonlySet<number>,
+  custom: readonly { label: string; checked: boolean }[],
+  title: string,
+): string {
+  const lines = [title];
+  for (const aisle of list.aisles) {
+    const items = aisle.items.filter((i) => !checkedIds.has(i.ingredientId));
+    if (items.length === 0) continue;
+    lines.push("", `*${aisle.label}*`, ...items.map((i) => `• ${i.name} – ${formatAmount(i.amount, i.unit)}`));
+  }
+  const extras = custom.filter((c) => !c.checked);
+  if (extras.length > 0) lines.push("", "*Extra items*", ...extras.map((c) => `• ${c.label}`));
+  if (lines.length === 1) lines.push("", "Everything is ticked off!");
+  return lines.join("\n");
+}
+
+export function whatsappShareUrl(text: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
 // "Buy 2 × 500 g" / "Buy 1 pack of 12".
 export function formatPacks(item: Pick<ShoppingItem, "packs" | "packSize" | "unit">): string {
   if (item.unit === "piece") return `Buy ${item.packs} pack${item.packs === 1 ? "" : "s"} of ${item.packSize}`;

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { weekStart } from "@/lib/planner";
+import { STORE_IDS } from "@/lib/stores";
 import { getCurrentProfile } from "@/lib/profile-server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -79,6 +80,17 @@ export async function deleteCustomItemAction(itemId: unknown): Promise<Result> {
 
   const { error } = await ctx.supabase.from("shopping_list_items").delete().eq("id", id.data).not("label", "is", null);
   return failed(error, "deleteCustomItem") ?? done();
+}
+
+// Store used for "Buy" links (also the profile default).
+export async function setPreferredStoreAction(store: unknown): Promise<Result> {
+  const parsed = z.enum(STORE_IDS).safeParse(store);
+  if (!parsed.success) return { ok: false, error: "Unknown store." };
+  const ctx = await context();
+  if (!ctx) return { ok: false, error: "Please sign in again." };
+
+  const { error } = await ctx.supabase.from("profiles").update({ preferred_store: parsed.data }).eq("id", ctx.userId);
+  return failed(error, "setPreferredStore") ?? done();
 }
 
 // "I always have this at home" — hides it from every week's list until removed.

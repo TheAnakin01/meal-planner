@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { allergenLabel } from "@/lib/allergens";
 import { dietLabel } from "@/lib/diet";
 import { type RecipeRow, recipeFromRow } from "@/lib/library";
+import { getCurrentProfile } from "@/lib/profile-server";
+import { DEFAULT_STORE, storeName, storeSearchUrl } from "@/lib/stores";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -14,7 +16,7 @@ interface LineRow {
   grams: number | string;
   display_amount: string;
   note: string;
-  ingredients: { name: string } | null;
+  ingredients: { name: string; search_term: string } | null;
 }
 
 // Portions shown in the plan are 0.5×–2× in 0.25 steps; anything else falls back to 1 serving.
@@ -39,11 +41,12 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
 
   const { data: lines } = await supabase
     .from("recipe_ingredients")
-    .select("grams, display_amount, note, ingredients(name)")
+    .select("grams, display_amount, note, ingredients(name, search_term)")
     .eq("recipe_id", recipeId)
     .order("position")
     .returns<LineRow[]>();
 
+  const store = (await getCurrentProfile())?.preferredStore ?? DEFAULT_STORE;
   const n = recipe.perServing;
   const totalMinutes = recipe.prepMinutes + recipe.cookMinutes;
 
@@ -85,13 +88,28 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
         <h2 id="ingredients" className="text-xl font-bold">
           Ingredients <span className="text-sm font-normal text-zinc-600 dark:text-zinc-400">(whole recipe)</span>
         </h2>
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
+          &ldquo;Buy&rdquo; opens {storeName(store)} (change it on your shopping list).
+        </p>
         <ul className="mt-2 divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {(lines ?? []).map((l, i) => (
-            <li key={i} className="flex justify-between gap-3 p-3 text-sm">
+            <li key={i} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 p-3 text-sm">
               <span className="font-medium">{l.ingredients?.name ?? "ingredient"}</span>
-              <span className="text-zinc-600 dark:text-zinc-400">
-                {l.display_amount ? `${l.display_amount} · ` : ""}
-                {fmt(Number(l.grams))} g
+              <span className="flex items-baseline gap-3 text-zinc-600 dark:text-zinc-400">
+                <span>
+                  {l.display_amount ? `${l.display_amount} · ` : ""}
+                  {fmt(Number(l.grams))} g
+                </span>
+                {l.ingredients && l.ingredients.name !== "water" && (
+                  <a
+                    href={storeSearchUrl(store, l.ingredients.search_term)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+                  >
+                    Buy<span className="sr-only"> {l.ingredients.name} on {storeName(store)} (opens in a new tab)</span> ↗
+                  </a>
+                )}
               </span>
             </li>
           ))}

@@ -560,7 +560,9 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
 - [x] **Step 21 — Shopping list:** generation, unit rounding, aisles, tick-off, custom items, pantry.
       List is computed live from the plan (`src/lib/shopping.ts`); migration 0007 stores only ticks, extra items
       (`shopping_list_items`) and pantry (`pantry_items`). Water is never listed. Page `/shopping`.
-- [ ] **Step 22 — Buy online & share:** store links (§17), preferred store, WhatsApp share, copy list.
+- [x] **Step 22 — Buy online & share:** store links (§17), preferred store, WhatsApp share, copy list.
+      "Buy on <store>" per shopping item and per recipe ingredient; store picker on /shopping saves
+      `profiles.preferred_store`; WhatsApp/copy share unticked items (`buildShareText`).
 - [ ] **Step 23 — Today view:** v1 dashboard reads today's meals from the week plan; Spoonacular moves to "Discover".
 
 **Phase C — Offline-first app**

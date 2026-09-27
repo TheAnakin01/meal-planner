@@ -7,21 +7,34 @@ import {
   setCheckedAction,
   setCustomCheckedAction,
   setPantryAction,
+  setPreferredStoreAction,
 } from "@/app/shopping/actions";
 import type { CustomItem } from "@/lib/shopping-server";
-import { type ShoppingItem, type ShoppingList, formatAmount, formatPacks } from "@/lib/shopping";
+import {
+  type ShoppingItem,
+  type ShoppingList,
+  buildShareText,
+  formatAmount,
+  formatPacks,
+  whatsappShareUrl,
+} from "@/lib/shopping";
+import { STORES, type StoreId, storeName, storeSearchUrl } from "@/lib/stores";
 
 interface Props {
   list: ShoppingList;
   checkedIds: number[];
   custom: CustomItem[];
+  preferredStore: StoreId;
+  shareTitle: string;
 }
 
 const linkButton = "text-xs font-semibold text-emerald-700 hover:underline disabled:opacity-50 dark:text-emerald-400";
 
-export default function ShoppingListView({ list, checkedIds, custom }: Props) {
+export default function ShoppingListView({ list, checkedIds, custom, preferredStore, shareTitle }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [store, setStore] = useState<StoreId>(preferredStore);
+  const [copied, setCopied] = useState(false);
   const [newItem, setNewItem] = useState("");
   // Ticks update instantly; the server catches up.
   const [checked, toggleChecked] = useOptimistic(new Set(checkedIds), (set: Set<number>, id: number) => {
@@ -48,6 +61,23 @@ export default function ShoppingListView({ list, checkedIds, custom }: Props) {
       if (r.ok) setNewItem("");
       return r;
     });
+  }
+
+  const shareText = buildShareText(list, checked, custom, shareTitle);
+
+  async function copyList() {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setError("Couldn't copy. Please use the WhatsApp button instead.");
+    }
+  }
+
+  function changeStore(next: StoreId) {
+    setStore(next);
+    run(() => setPreferredStoreAction(next));
   }
 
   const allItems = list.aisles.flatMap((a) => a.items);
@@ -77,6 +107,17 @@ export default function ShoppingListView({ list, checkedIds, custom }: Props) {
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Need {formatAmount(item.amount, item.unit)} · {formatPacks(item)}
           </p>
+          {!isChecked && (
+            <a
+              href={storeSearchUrl(store, item.searchTerm)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+            >
+              Buy on {storeName(store)}
+              <span className="sr-only"> – {item.name} (opens in a new tab)</span> ↗
+            </a>
+          )}
         </div>
         <button type="button" disabled={pending} onClick={() => run(() => setPantryAction(item.ingredientId, true))} className={linkButton}>
           Have it<span className="sr-only"> ({item.name}, move to pantry)</span>
@@ -87,6 +128,42 @@ export default function ShoppingListView({ list, checkedIds, custom }: Props) {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <label className="text-sm font-medium">
+          Buy from
+          <select
+            value={store}
+            onChange={(e) => changeStore(e.target.value as StoreId)}
+            className="mt-1 block rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base dark:border-zinc-700"
+          >
+            {STORES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {total > 0 && (
+          <div className="flex gap-2">
+            <a
+              href={whatsappShareUrl(shareText)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              Share on WhatsApp<span className="sr-only"> (opens in a new tab)</span>
+            </a>
+            <button
+              type="button"
+              onClick={copyList}
+              className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            >
+              {copied ? "Copied!" : "Copy list"}
+            </button>
+          </div>
+        )}
+      </div>
+
       <p className="text-sm text-zinc-600 dark:text-zinc-400" role="status">
         {total === 0 ? "Nothing to buy yet." : `${done} of ${total} ticked`}
       </p>
