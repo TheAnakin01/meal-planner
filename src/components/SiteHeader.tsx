@@ -18,7 +18,7 @@ export default async function SiteHeader() {
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-800">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="shrink-0 whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400">
+        <Link href="/" className="shrink-0 whitespace-nowrap font-bold text-emerald-700 dark:text-emerald-400">
           Meal Planner
         </Link>
 

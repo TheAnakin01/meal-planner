@@ -218,7 +218,7 @@ export default function ProfileForm({ initial }: { initial?: ProfileInput }) {
                       aria-describedby={errors.heightCm ? "heightCm-error" : undefined}
                       className={`${inputClass} mt-0 pr-9`}
                     />
-                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">ft</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-600 dark:text-zinc-400">ft</span>
                   </div>
                 </label>
                 <label className="flex-1">
@@ -233,7 +233,7 @@ export default function ProfileForm({ initial }: { initial?: ProfileInput }) {
                       aria-invalid={!!errors.heightCm}
                       className={`${inputClass} mt-0 pr-9`}
                     />
-                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">in</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-600 dark:text-zinc-400">in</span>
                   </div>
                 </label>
               </div>
@@ -328,7 +328,7 @@ export default function ProfileForm({ initial }: { initial?: ProfileInput }) {
       <button
         type="submit"
         disabled={saving}
-        className="w-full rounded-xl bg-emerald-600 px-6 py-4 text-lg font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 disabled:opacity-60 sm:w-auto"
+        className="w-full rounded-xl bg-emerald-700 px-6 py-4 text-lg font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 disabled:opacity-60 sm:w-auto"
       >
         {saving ? "Saving…" : "Save and see my plan"}
       </button>

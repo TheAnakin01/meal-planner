@@ -61,7 +61,7 @@ export function MealPlanSkeleton() {
       {MEALS.map((meal) => (
         <div key={meal.type} className="space-y-3">
           <h2 className="text-xl font-bold">{meal.title}</h2>
-          <div className="animate-pulse overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-hidden motion-safe:animate-pulse rounded-xl border border-zinc-200 dark:border-zinc-800">
             <div className="aspect-[3/2] w-full bg-zinc-200 dark:bg-zinc-800" />
             <div className="space-y-2 p-4">
               <div className="h-5 w-3/4 rounded bg-zinc-200 dark:bg-zinc-800" />

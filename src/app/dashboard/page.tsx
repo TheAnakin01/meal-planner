@@ -41,7 +41,7 @@ export default async function DashboardPage() {
         </Suspense>
       </div>
 
-      <div className="mt-10 space-y-2 text-xs text-zinc-500">
+      <div className="mt-10 space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
         <p>
           Recipes are filtered for your allergies twice, but recipe data comes from third parties and may be
           wrong. Always check ingredient labels before cooking.

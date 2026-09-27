@@ -16,7 +16,7 @@ export default function MacroSummary({ plan, excluding }: MacroSummaryProps) {
 
   return (
     <section aria-label="Your daily targets" className="space-y-4">
-      <div className="rounded-xl bg-emerald-600 p-5 text-white">
+      <div className="rounded-xl bg-emerald-700 p-5 text-white">
         <p className="text-sm font-medium opacity-90">Daily calorie target</p>
         <p className="mt-1 text-4xl font-bold">
           {plan.calories.toLocaleString()} <span className="text-lg font-semibold">kcal</span>

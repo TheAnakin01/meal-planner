@@ -18,7 +18,7 @@ const features = [
 export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-12 sm:py-20">
-      <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+      <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
         Meal Planner
       </p>
       <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-5xl">
@@ -31,7 +31,7 @@ export default function Home() {
 
       <Link
         href="/dashboard"
-        className="mt-8 block w-full rounded-xl bg-emerald-600 px-6 py-4 text-center text-lg font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 sm:inline-block sm:w-auto"
+        className="mt-8 block w-full rounded-xl bg-emerald-700 px-6 py-4 text-center text-lg font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 sm:inline-block sm:w-auto"
       >
         Get started
       </Link>
@@ -48,7 +48,7 @@ export default function Home() {
         ))}
       </ul>
 
-      <p className="mt-12 text-xs text-zinc-500">
+      <p className="mt-12 text-xs text-zinc-600 dark:text-zinc-400">
         Estimates only, not medical advice. Always check ingredient labels.
       </p>
     </main>

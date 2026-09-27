@@ -54,7 +54,7 @@ export default function MealSection({
               className="w-full rounded-xl border border-zinc-300 px-4 py-3 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
             >
               Show another{" "}
-              <span className="text-sm text-zinc-500">
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
                 ({index + 1} of {recipes.length})
               </span>
             </button>

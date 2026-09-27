@@ -22,7 +22,7 @@ export default function MealCard({ recipe, mealType, saved }: MealCardProps) {
   ];
 
   return (
-    <article className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <article className="overflow-hidden rounded-xl border border-zinc-200 sm:flex dark:border-zinc-800">
       {recipe.imageUrl ? (
         // Plain <img>: Spoonacular already sizes images, and this avoids Vercel image-optimisation quotas.
         // eslint-disable-next-line @next/next/no-img-element
@@ -30,13 +30,13 @@ export default function MealCard({ recipe, mealType, saved }: MealCardProps) {
           src={largerImage(recipe.imageUrl)}
           alt=""
           loading="lazy"
-          className="aspect-[3/2] w-full bg-zinc-100 object-cover dark:bg-zinc-800"
+          className="aspect-[3/2] w-full bg-zinc-100 object-cover sm:aspect-auto sm:w-2/5 sm:shrink-0 dark:bg-zinc-800"
         />
       ) : (
-        <div className="aspect-[3/2] w-full bg-zinc-100 dark:bg-zinc-800" aria-hidden />
+        <div className="aspect-[3/2] w-full bg-zinc-100 sm:aspect-auto sm:w-2/5 sm:shrink-0 dark:bg-zinc-800" aria-hidden />
       )}
 
-      <div className="p-4">
+      <div className="p-4 sm:flex-1">
         <h3 className="text-lg font-semibold leading-snug">{recipe.title}</h3>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           {[
@@ -56,7 +56,7 @@ export default function MealCard({ recipe, mealType, saved }: MealCardProps) {
             </div>
           ))}
         </dl>
-        <p className="mt-1 text-xs text-zinc-500">Per serving</p>
+        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Per serving</p>
 
         <div className="mt-3 flex items-center justify-between gap-3">
           <a

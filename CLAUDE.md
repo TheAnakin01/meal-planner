@@ -317,7 +317,10 @@ Each step ends with a commit + push. Tick boxes as you go.
 - [x] **Step 10 — Dashboard UI:** macro summary, meal sections, recipe cards, "Show another", spoonacular backlink.
 - [x] **Step 11 — Saved recipes (optional):** heart button → `saved_recipes` table (id/title/image only, migration
       0002), "Saved recipes" page at `/dashboard/saved` (no API calls).
-- [ ] **Step 12 — Polish:** mobile testing (360px, 768px), accessibility, loading/empty/error states, disclaimers.
+- [x] **Step 12 — Polish:** mobile testing (360px, 768px), accessibility, loading/empty/error states, disclaimers.
+      Done 2026-09-27: axe-core (WCAG 2 A/AA + best practice) reports 0 issues on all pages in light and dark mode;
+      colours meet 4.5:1 (use emerald-700 for white-text buttons, zinc-600/zinc-400 for secondary text);
+      error.tsx, not-found.tsx, loading.tsx added; recipe cards go side-by-side from 640px.
 - [ ] **Step 13 — Launch check:** add Vercel URL to Supabase redirect URLs, test sign-up → profile → plan on a phone,
       confirm no service is on a paid plan.
 

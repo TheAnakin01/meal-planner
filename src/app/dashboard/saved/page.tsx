@@ -27,7 +27,7 @@ export default async function SavedRecipesPage() {
           </p>
           <Link
             href="/dashboard"
-            className="mt-4 inline-block rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-700"
+            className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800"
           >
             Go to my plan
           </Link>
@@ -82,7 +82,7 @@ export default async function SavedRecipesPage() {
         })
       )}
 
-      <p className="mt-10 text-xs text-zinc-500">
+      <p className="mt-10 text-xs text-zinc-600 dark:text-zinc-400">
         Nutrition isn&apos;t shown here because Spoonacular&apos;s terms don&apos;t let us store it. Tap
         &ldquo;View recipe&rdquo; for full details, and always check ingredient labels.
       </p>
