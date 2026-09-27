@@ -5,9 +5,7 @@ import { type AuthState, authenticate } from "@/app/login/actions";
 
 type Mode = "signin" | "signup";
 
-const inputClass =
-  "mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-3 text-base " +
-  "focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 dark:border-zinc-700";
+const inputClass = "input mt-1";
 
 export default function AuthForm({ next }: { next: string }) {
   const [mode, setMode] = useState<Mode>("signin");
@@ -16,7 +14,7 @@ export default function AuthForm({ next }: { next: string }) {
 
   if (state.message) {
     return (
-      <div role="status" className="rounded-xl border border-emerald-600 bg-emerald-50 p-5 dark:bg-emerald-950">
+      <div role="status" className="card border-emerald-300 bg-emerald-50 motion-safe:animate-fade-up dark:border-emerald-800 dark:bg-emerald-950">
         <h2 className="font-semibold">Check your email</h2>
         <p className="mt-2 text-sm">{state.message}</p>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -31,7 +29,7 @@ export default function AuthForm({ next }: { next: string }) {
       type="button"
       onClick={() => setMode(value)}
       aria-pressed={mode === value}
-      className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
+      className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
         mode === value ? "bg-white shadow-sm dark:bg-zinc-700" : "text-zinc-600 dark:text-zinc-400"
       }`}
     >
@@ -41,7 +39,7 @@ export default function AuthForm({ next }: { next: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="group" aria-label="Sign in or create account">
+      <div className="flex rounded-full bg-zinc-200/70 p-1 dark:bg-zinc-800" role="group" aria-label="Sign in or create account">
         {tab("signin", "Sign in")}
         {tab("signup", "Create account")}
       </div>
@@ -88,7 +86,7 @@ export default function AuthForm({ next }: { next: string }) {
         </div>
 
         {state.error && (
-          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700 motion-safe:animate-fade-up dark:bg-red-950 dark:text-red-300">
             {state.error}
           </p>
         )}
@@ -96,7 +94,7 @@ export default function AuthForm({ next }: { next: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-xl bg-emerald-700 px-6 py-4 text-lg font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 disabled:opacity-60"
+          className="btn btn-primary w-full py-4 text-base"
         >
           {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>

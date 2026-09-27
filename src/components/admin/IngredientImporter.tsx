@@ -13,7 +13,7 @@ const inputClass =
   "mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base " +
   "focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/30 dark:border-zinc-700";
 const buttonClass =
-  "rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60";
+  "btn btn-primary";
 
 const FLAGS = [
   { key: "containsMeat", label: "Meat" },
@@ -188,7 +188,7 @@ export default function IngredientImporter({ editing, initialQuery = "" }: { edi
       : null;
 
   return (
-    <section aria-labelledby="add-ingredient" className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <section aria-labelledby="add-ingredient" className="space-y-4 card">
       <h2 id="add-ingredient" className="text-xl font-bold">
         {editing ? `Edit "${editing.name}"` : "Add an ingredient"}
       </h2>

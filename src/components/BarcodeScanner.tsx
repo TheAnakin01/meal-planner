@@ -77,11 +77,11 @@ export default function BarcodeScanner({ onBarcode, disabled }: { onBarcode: (co
             ref={videoRef}
             muted
             playsInline
-            className={`w-full max-w-sm rounded-xl bg-black ${scanning ? "block" : "hidden"}`}
+            className={`w-full max-w-sm rounded-2xl bg-black ${scanning ? "block" : "hidden"}`}
             aria-label="Camera view for scanning a barcode"
           />
           {scanning ? (
-            <button type="button" onClick={stop} className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold dark:border-zinc-700">
+            <button type="button" onClick={stop} className="btn btn-secondary">
               Stop camera
             </button>
           ) : (
@@ -89,7 +89,7 @@ export default function BarcodeScanner({ onBarcode, disabled }: { onBarcode: (co
               type="button"
               onClick={start}
               disabled={disabled}
-              className="rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+              className="btn btn-primary"
             >
               Scan with camera
             </button>
@@ -107,12 +107,12 @@ export default function BarcodeScanner({ onBarcode, disabled }: { onBarcode: (co
           onChange={(e) => setTyped(e.target.value)}
           inputMode="numeric"
           placeholder={cameraSupported ? "…or type the barcode number" : "Type the barcode number"}
-          className="block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base dark:border-zinc-700"
+          className="input py-2.5"
         />
         <button
           type="submit"
           disabled={disabled || typed.trim() === ""}
-          className="shrink-0 rounded-xl border border-zinc-300 px-4 py-2 font-semibold hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          className="btn btn-secondary shrink-0"
         >
           Look up
         </button>

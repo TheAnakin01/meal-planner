@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import PageHeader from "@/components/ui/PageHeader";
+import { DiaryIcon } from "@/components/ui/icons";
 import { redirect } from "next/navigation";
 import DiaryView, { type PlannedToday } from "@/components/DiaryView";
 import { type DiaryEntry, diaryTotals, isoDateSchema, localDate, shiftDate } from "@/lib/diary";
@@ -76,26 +78,25 @@ export default async function DiaryPage({ searchParams }: PageProps<"/diary">) {
   const label = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(
     new Date(`${date}T12:00:00Z`),
   );
-  const navLink = "rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800";
+  const navLink =
+    "grid h-11 w-11 place-items-center rounded-full border border-zinc-200 bg-white text-lg shadow-sm transition hover:bg-zinc-50 active:scale-90 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800";
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 sm:py-12">
-      <div>
-        <h1 className="text-3xl font-bold">Food diary</h1>
-        <nav aria-label="Choose day" className="mt-3 flex items-center justify-between gap-2">
-          <Link href={`/diary?date=${shiftDate(date, -1)}`} className={navLink}>
-            ← Previous day
+    <main className="page">
+      <PageHeader icon={DiaryIcon} tint="bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300" title="Food diary" intro="What you actually ate" />
+      <nav aria-label="Choose day" className="flex items-center justify-between gap-2">
+        <Link href={`/diary?date=${shiftDate(date, -1)}`} className={navLink} aria-label="Previous day">
+          ←
+        </Link>
+        <span className="text-center font-semibold">{isToday ? `Today, ${label}` : label}</span>
+        {isToday ? (
+          <span className="w-11" aria-hidden />
+        ) : (
+          <Link href={`/diary?date=${shiftDate(date, 1)}`} className={navLink} aria-label="Next day">
+            →
           </Link>
-          <span className="text-center font-semibold">{isToday ? `Today, ${label}` : label}</span>
-          {isToday ? (
-            <span className="w-24" aria-hidden />
-          ) : (
-            <Link href={`/diary?date=${shiftDate(date, 1)}`} className={navLink}>
-              Next day →
-            </Link>
-          )}
-        </nav>
-      </div>
+        )}
+      </nav>
       {/* key: fresh form state when switching days */}
       <DiaryView
         key={date}

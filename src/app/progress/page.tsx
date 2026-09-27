@@ -18,6 +18,8 @@ import {
 } from "@/lib/progress";
 import { getCurrentProfile } from "@/lib/profile-server";
 import { createClient } from "@/lib/supabase/server";
+import PageHeader from "@/components/ui/PageHeader";
+import { ChartIcon } from "@/components/ui/icons";
 
 export const metadata: Metadata = {
   title: "Progress · Meal Planner",
@@ -70,17 +72,12 @@ export default async function ProgressPage() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 space-y-8 px-4 py-8 sm:py-12">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Your progress</h1>
-        <Link href="/diary" className="shrink-0 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800">
-          Food diary
-        </Link>
-      </div>
+    <main className="page">
+      <PageHeader icon={ChartIcon} tint="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" title="Your progress" intro="Streaks, calories and weight trend" />
 
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <dl className="stagger grid grid-cols-2 gap-3 sm:grid-cols-4">
         {tiles.map((t) => (
-          <div key={t.label} className="flex flex-col-reverse justify-end rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+          <div key={t.label} className="card flex flex-col-reverse justify-end p-4">
             <dd className="text-xs text-zinc-600 dark:text-zinc-400">{t.note}</dd>
             <dd className="text-2xl font-semibold">{t.value}</dd>
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">{t.label}</dt>
@@ -88,20 +85,20 @@ export default async function ProgressPage() {
         ))}
       </dl>
 
-      <section aria-labelledby="calories-chart" className="space-y-2">
+      <section aria-labelledby="calories-chart" className="card space-y-2">
         <h2 id="calories-chart" className="text-xl font-bold">
           Calories eaten, last 14 days
         </h2>
         {last14.some((d) => d.logged) ? (
           <CalorieChart days={last14} targetKcal={targets.calories} />
         ) : (
-          <p className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
+          <p className="rounded-2xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
             Nothing logged yet. Use the <Link href="/diary" className="font-semibold underline">food diary</Link> to see your calories here.
           </p>
         )}
       </section>
 
-      <section aria-labelledby="weight-chart" className="space-y-3">
+      <section aria-labelledby="weight-chart" className="card space-y-3">
         <h2 id="weight-chart" className="text-xl font-bold">
           Weight
         </h2>

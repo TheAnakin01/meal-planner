@@ -22,7 +22,7 @@ export default function MealCard({ recipe, mealType, saved }: MealCardProps) {
   ];
 
   return (
-    <article className="overflow-hidden rounded-xl border border-zinc-200 sm:flex dark:border-zinc-800">
+    <article className="overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md motion-safe:animate-fade-up sm:flex dark:border-zinc-800 dark:bg-zinc-900">
       {recipe.imageUrl ? (
         // Plain <img>: Spoonacular already sizes images, and this avoids Vercel image-optimisation quotas.
         // eslint-disable-next-line @next/next/no-img-element
@@ -50,7 +50,7 @@ export default function MealCard({ recipe, mealType, saved }: MealCardProps) {
 
         <dl className="mt-3 grid grid-cols-4 gap-2 text-center">
           {stats.map((s) => (
-            <div key={s.label} className="flex flex-col-reverse rounded-lg bg-zinc-100 px-1 py-2 dark:bg-zinc-800">
+            <div key={s.label} className="flex flex-col-reverse rounded-2xl bg-zinc-100 px-1 py-2 dark:bg-zinc-800">
               <dt className="text-xs text-zinc-600 dark:text-zinc-400">{s.label}</dt>
               <dd className="font-semibold">{s.value}</dd>
             </div>

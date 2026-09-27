@@ -79,10 +79,11 @@ Meal_Planner/
 │   │       └── saved/         # saved recipes page + save/unsave server action
 │   ├── components/
 │   │   ├── ProfileForm.tsx
-│   │   ├── MacroSummary.tsx
-│   │   ├── MealCard.tsx
+│   │   ├── AppNav.tsx         # phone tab bar + "More" sheet + desktop tabs (see §24)
+│   │   ├── meal-ui.tsx        # meal colours, time-of-day icons, action icons
+│   │   ├── MealCard.tsx       # Discover (Spoonacular) cards
 │   │   ├── MealSection.tsx
-│   │   └── ui/                # Button, Input, Select, Card, Spinner...
+│   │   └── ui/                # icons.tsx, PageHeader.tsx
 │   ├── lib/
 │   │   ├── nutrition.ts       # BMR / TDEE / calorie & macro maths (§5.1, §5.2)
 │   │   ├── allergens.ts       # allergy list + Spoonacular mapping (§5.3 layer 1)
@@ -292,9 +293,8 @@ The Spoonacular key must **not** have the `NEXT_PUBLIC_` prefix (keeps it server
 - **/login**: email + password sign up/sign in, or magic link.
 - **/profile**: the form. Big touch-friendly inputs, unit toggle (metric/imperial), allergy checkboxes grid,
   "Other allergies" text box. Save → redirect to dashboard.
-- **/dashboard**: calorie target card, macro bars (protein/carbs/fat), then Breakfast / Lunch / Dinner sections, each
-  with recipe cards (image, name, kcal & macros per serving, "View recipe" link to source, "Show another", ♥ save).
-  Allergy badge row: "Excluding: Peanuts, Dairy".
+- **/dashboard** ("Today", v2): greeting + calorie ring + macro bars for today's plan, quick actions, today's meals
+  (swap), settings card with diet and "No <allergen>" chips. (The v1 Spoonacular cards moved to /discover.) See §24.
 - Loading skeletons, friendly error messages, accessible labels, good colour contrast, dark-mode friendly.
 - Mobile-first: single column on phones, 2–3 columns on tablets/desktop.
 
@@ -647,6 +647,36 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       (nosniff, no framing, referrer policy, permissions policy with camera kept for the scanner).
       Owner confirmed 2026-09-27: phone walkthrough online + offline OK; Vercel Hobby, Supabase Free, Spoonacular Free,
       Gemini free tier (no billing), GitHub Free, USDA key — all free.
+
+**Phase F — Polish (owner requests after launch)**
+- [x] **Step 34 — Starter library + bulk publish:** see Step 18 notes (79 recipes, "Publish ready drafts").
+- [x] **Step 35 — App-wide redesign (2026-09-27):** owner asked for a "cooler, simpler, more user-friendly" UI with
+      motion. New app shell (tab bar, More sheet, page fade-in), redesigned Today, Week, Shopping, Recipe, Diary,
+      Progress, Coach, Profile, Household, Discover, home and sign-in pages (§24). axe: 0 issues light + dark at 375px;
+      no sideways scroll at 360px.
+- [x] **Step 36 — Auto-update installed app:** `/api/version` returns the deployed commit (`VERCEL_GIT_COMMIT_SHA`);
+      `NEXT_PUBLIC_BUILD_ID` (next.config.ts) is baked into the browser code; `OfflineSupport` checks when the app comes
+      back on screen and reloads once per new version (never while typing). Owner had to fully close the Android app to see
+      an update before this.
+
+## 24. UI & design system (2026-09-27)
+
+- **Shell:** sticky blurred header (logo, desktop tabs, avatar → /profile). Phones get a floating bottom tab bar
+  (`AppNav.tsx` `BottomNav`, rendered by `BottomNavSlot` after the footer, signed-in only): Today · Week · Shopping ·
+  Diary · More. "More" is a `<dialog>` bottom sheet (focus trap, Esc, backdrop tap) with Progress, AI coach, Household,
+  Discover, Saved, Profile, Recipe library (admins), Sign out. `session-server.ts` caches the sign-in/admin lookup per
+  request so header + tab bar share it.
+- **Tokens/utilities** in `globals.css`: background #f6f7f4 / #09090b; `card`, `btn` (+ `btn-primary`, `btn-secondary`,
+  `btn-dark`), `chip`, `input`, `page` (main container), `muted`. Use these instead of one-off class strings.
+- **Motion:** `fade-up`, `slide-from-left/right`, `pop`, `sheet-up`, `float`, `.stagger` (children fade in one by one),
+  `page-in` (template.tsx). Always via `motion-safe:` or inside `prefers-reduced-motion: no-preference`.
+  **`page-in` uses fill-mode `backwards`** — a leftover transform on the page wrapper would trap `position: fixed`.
+- **Meals:** `meal-ui.tsx` — breakfast amber / lunch emerald / dinner indigo, sunrise/sun/moon icons; colour is
+  decoration only, text stays zinc for contrast. `ProgressRing` (+ `useCountUp`) for calorie rings (#059669, amber when
+  >110%, dataviz skill). `PageHeader` (icon, eyebrow, title, intro, action) on every page.
+- **Checks for any UI change:** axe (WCAG 2 A/AA + best practice) light and dark at 375px, no horizontal scroll at 360px.
+  The preview browser can't sign in: render components on a temporary `src/app/dev-preview/page.tsx` and delete it
+  before committing. Screenshots may time out when the app window is hidden — use DOM checks then.
 
 ## 23. v2 free-plan limits to design around
 

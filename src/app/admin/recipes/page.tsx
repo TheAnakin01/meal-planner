@@ -29,13 +29,13 @@ export default async function AdminRecipesPage() {
           <div className="flex shrink-0 gap-2">
             <Link
               href="/admin/recipes/draft"
-              className="rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800"
+              className="btn btn-primary"
             >
               Draft with AI
             </Link>
             <Link
               href="/admin/recipes/new"
-              className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              className="btn btn-secondary"
             >
               New
             </Link>

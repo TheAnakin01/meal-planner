@@ -15,7 +15,7 @@ export default function OfflinePage() {
         shopping list and recipes — still work without internet.
       </p>
       <nav className="mt-8 flex flex-col gap-3">
-        <a href="/dashboard" className="rounded-xl bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800">
+        <a href="/dashboard" className="btn btn-primary px-6 py-3">
           Today
         </a>
         <a href="/week" className="rounded-xl border border-zinc-300 px-6 py-3 font-semibold dark:border-zinc-700">

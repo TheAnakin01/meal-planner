@@ -27,7 +27,7 @@ export default function PublishDraftsButton({ draftCount }: { draftCount: number
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="space-y-3 card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           {draftCount} draft{draftCount === 1 ? "" : "s"} waiting for review.
@@ -36,7 +36,7 @@ export default function PublishDraftsButton({ draftCount }: { draftCount: number
           type="button"
           onClick={publish}
           disabled={pending || draftCount === 0}
-          className="rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {pending ? "Publishing…" : "Publish ready drafts"}
         </button>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AuthForm from "@/components/AuthForm";
+import { LeafIcon } from "@/components/ui/icons";
 import { safeNextPath } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -22,16 +23,19 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const notice = NOTICES[noticeKey];
 
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-4 py-8 sm:py-12">
-      <h1 className="text-3xl font-bold">Welcome</h1>
-      <p className="mt-2 mb-8 text-zinc-600 dark:text-zinc-400">
-        Sign in to save your profile and see your meal plan.
-      </p>
+    <main className="mx-auto w-full max-w-md flex-1 px-4 pt-10 pb-12">
+      <div className="mb-8 text-center">
+        <span className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-900/20 motion-safe:animate-float">
+          <LeafIcon size={32} />
+        </span>
+        <h1 className="mt-5 text-3xl font-bold tracking-tight">Welcome</h1>
+        <p className="mt-2 muted">Sign in to save your profile and see your meal plan.</p>
+      </div>
 
       {notice && (
         <p
           role={notice.tone === "error" ? "alert" : "status"}
-          className={`mb-6 rounded-lg p-3 text-sm ${
+          className={`mb-6 rounded-2xl p-3 text-sm ${
             notice.tone === "error"
               ? "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
               : "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
@@ -41,7 +45,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </p>
       )}
 
-      <AuthForm next={next} />
+      <div className="card p-6">
+        <AuthForm next={next} />
+      </div>
     </main>
   );
 }

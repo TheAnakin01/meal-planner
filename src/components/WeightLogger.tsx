@@ -36,7 +36,7 @@ export default function WeightLogger({ todayKg, suggestKg, profileKg }: Props) {
   }
 
   return (
-    <section aria-labelledby="log-weight" className="space-y-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <section aria-labelledby="log-weight" className="space-y-3 card">
       <h2 id="log-weight" className="font-bold">
         {todayKg !== null ? "Today's weight" : "Log today's weight"}
       </h2>
@@ -58,7 +58,7 @@ export default function WeightLogger({ todayKg, suggestKg, profileKg }: Props) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {todayKg !== null ? "Update" : "Save"}
         </button>
@@ -66,7 +66,7 @@ export default function WeightLogger({ todayKg, suggestKg, profileKg }: Props) {
       <p className="text-xs text-zinc-600 dark:text-zinc-400">Tip: weigh yourself at the same time of day, e.g. in the morning.</p>
 
       {suggestKg !== null && (
-        <div role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+        <div role="status" className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
           Your profile says {profileKg} kg but you last weighed {suggestKg} kg. Update your profile so your calorie targets fit?{" "}
           <button type="button" disabled={pending} onClick={() => run(() => applyLatestWeightAction(suggestKg), "Profile updated — your targets now use your latest weight.")} className="font-semibold underline">
             Use {suggestKg} kg

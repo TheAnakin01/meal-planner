@@ -31,10 +31,7 @@ const GOALS = [
   { value: "gain", label: "Gain weight" },
 ] as const;
 
-const inputClass =
-  "mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-3 text-base " +
-  "focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 " +
-  "aria-[invalid=true]:border-red-500 dark:border-zinc-700";
+const inputClass = "input mt-1 aria-[invalid=true]:border-red-500";
 
 // Empty input -> NaN so zod reports "Please enter ...".
 const toNumber = (value: string) => (value.trim() === "" ? NaN : Number(value));
@@ -305,7 +302,7 @@ export default function ProfileForm({ initial = {} }: { initial?: Partial<Profil
           {ALLERGENS.map((a) => (
             <label
               key={a.id}
-              className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-3 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 dark:border-zinc-800 dark:has-[:checked]:bg-emerald-950"
+              className="flex cursor-pointer items-center gap-2 rounded-2xl border border-zinc-200 px-3 py-3 transition hover:border-emerald-400 active:scale-[0.98] has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 dark:border-zinc-800 dark:has-[:checked]:bg-emerald-950"
             >
               <input
                 type="checkbox"
@@ -339,7 +336,7 @@ export default function ProfileForm({ initial = {} }: { initial?: Partial<Profil
       </fieldset>
 
       {Object.keys(errors).length > 0 && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700 motion-safe:animate-fade-up dark:bg-red-950 dark:text-red-300">
           Please fix the highlighted fields above.
         </p>
       )}
@@ -361,7 +358,7 @@ export default function ProfileForm({ initial = {} }: { initial?: Partial<Profil
       )}
 
       {saveError && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700 motion-safe:animate-fade-up dark:bg-red-950 dark:text-red-300">
           {saveError}
         </p>
       )}
@@ -369,7 +366,7 @@ export default function ProfileForm({ initial = {} }: { initial?: Partial<Profil
       <button
         type="submit"
         disabled={saving}
-        className="w-full rounded-xl bg-emerald-700 px-6 py-4 text-lg font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 disabled:opacity-60 sm:w-auto"
+        className="btn btn-primary w-full px-6 py-4 text-base sm:w-auto"
       >
         {saving ? "Saving…" : "Save and see my plan"}
       </button>
@@ -433,7 +430,7 @@ function ChoiceGroup({
         {options.map((o, i) => (
           <label
             key={o.value}
-            className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 dark:has-[:checked]:bg-emerald-950 ${
+            className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-3 py-3 transition hover:border-emerald-400 active:scale-[0.98] has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 has-[:checked]:shadow-sm dark:has-[:checked]:bg-emerald-950 ${
               error ? "border-red-500" : "border-zinc-200 dark:border-zinc-800"
             }`}
           >

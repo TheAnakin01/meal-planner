@@ -82,13 +82,13 @@ export default function ReminderSettings({ initial }: { initial: Settings }) {
         value={settings[key]}
         max="23:30"
         onChange={(e) => setSettings({ ...settings, [key]: e.target.value })}
-        className="mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base dark:border-zinc-700"
+        className="input mt-1 py-2.5"
       />
     </label>
   );
 
   return (
-    <section aria-labelledby="reminders" className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <section aria-labelledby="reminders" className="space-y-4 card">
       <div>
         <h2 id="reminders" className="text-lg font-bold">
           Meal reminders
@@ -121,7 +121,7 @@ export default function ReminderSettings({ initial }: { initial: Settings }) {
                   type="button"
                   disabled={pending}
                   onClick={() => run(() => saveReminderSettingsAction(settings), "Reminder times saved.")}
-                  className="rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                  className="btn btn-primary"
                 >
                   Save times
                 </button>
@@ -129,7 +129,7 @@ export default function ReminderSettings({ initial }: { initial: Settings }) {
                   type="button"
                   disabled={pending}
                   onClick={() => run(() => sendTestReminderAction(), "Test sent — check your notifications.")}
-                  className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  className="btn btn-secondary"
                 >
                   Send a test
                 </button>
@@ -137,7 +137,7 @@ export default function ReminderSettings({ initial }: { initial: Settings }) {
                   type="button"
                   disabled={pending}
                   onClick={() => run(turnOff, "Reminders turned off on this phone.")}
-                  className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  className="btn btn-secondary"
                 >
                   Turn off
                 </button>
@@ -147,7 +147,7 @@ export default function ReminderSettings({ initial }: { initial: Settings }) {
                 type="button"
                 disabled={pending}
                 onClick={() => run(turnOn, "Reminders are on for this phone.")}
-                className="rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                className="btn btn-primary"
               >
                 Turn on reminders
               </button>

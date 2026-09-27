@@ -3,6 +3,8 @@ import Link from "next/link";
 import SaveButton from "@/components/SaveButton";
 import { MEAL_TYPES, spoonacularRecipeUrl } from "@/lib/saved-recipes";
 import { getSavedRecipes } from "@/lib/saved-recipes-server";
+import PageHeader from "@/components/ui/PageHeader";
+import { HeartIcon } from "@/components/ui/icons";
 
 export const metadata: Metadata = {
   title: "Saved recipes · Meal Planner",
@@ -16,18 +18,18 @@ export default async function SavedRecipesPage() {
   const saved = await getSavedRecipes();
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:py-12">
-      <h1 className="text-3xl font-bold">Saved recipes</h1>
+    <main className="page">
+      <PageHeader icon={HeartIcon} tint="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" title="Saved recipes" />
 
       {saved.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-zinc-300 p-6 text-center dark:border-zinc-700">
+        <div className="card border-dashed text-center">
           <p>You haven&apos;t saved any recipes yet.</p>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             Tap <span aria-hidden>♡</span> Save on a recipe in Discover to keep it here.
           </p>
           <Link
             href="/discover"
-            className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800"
+            className="btn btn-primary mt-4"
           >
             Go to Discover
           </Link>
@@ -37,15 +39,15 @@ export default async function SavedRecipesPage() {
           const recipes = saved.filter((r) => r.mealType === meal);
           if (recipes.length === 0) return null;
           return (
-            <section key={meal} aria-labelledby={`saved-${meal}`} className="mt-8">
+            <section key={meal} aria-labelledby={`saved-${meal}`} className="space-y-3">
               <h2 id={`saved-${meal}`} className="text-xl font-bold">
                 {MEAL_LABELS[meal]}
               </h2>
-              <ul className="mt-3 space-y-3">
+              <ul className="stagger space-y-3">
                 {recipes.map((r) => (
                   <li
                     key={r.recipeId}
-                    className="flex items-center gap-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800"
+                    className="card flex items-center gap-3 p-3"
                   >
                     {r.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element

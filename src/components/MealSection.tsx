@@ -51,7 +51,7 @@ export default function MealSection({
             <button
               type="button"
               onClick={() => setIndex((i) => (i + 1) % recipes.length)}
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              className="btn btn-secondary w-full py-3"
             >
               Show another{" "}
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -67,7 +67,7 @@ export default function MealSection({
 
 function Notice({ children }: { children: React.ReactNode }) {
   return (
-    <p role="status" className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
+    <p role="status" className="rounded-2xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
       {children}
     </p>
   );

@@ -11,6 +11,7 @@ import {
 } from "@/app/diary/actions";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import { DIARY_MEALS, type DiaryEntry, type DiaryMeal } from "@/lib/diary";
+import ProgressRing from "@/components/week/ProgressRing";
 import type { Nutrients } from "@/lib/library";
 import { OFF_ATTRIBUTION, nutrientsForGrams } from "@/lib/openfoodfacts";
 
@@ -32,8 +33,8 @@ interface Props {
 }
 
 const MEAL_LABEL: Record<DiaryMeal, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snacks" };
-const inputClass = "mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base dark:border-zinc-700";
-const primary = "rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60";
+const inputClass = "input mt-1 py-2.5";
+const primary = "btn btn-primary";
 const num = (s: string) => (s.trim() === "" ? 0 : Number(s));
 
 function defaultMeal(): DiaryMeal {
@@ -102,19 +103,33 @@ export default function DiaryView({ date, entries, totals, targetKcal, targetPro
   const pct = targetKcal > 0 ? Math.min(100, Math.round((totals.kcal / targetKcal) * 100)) : 0;
 
   return (
-    <div className="space-y-6" aria-busy={pending}>
-      <section aria-label="Totals" className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-        <p className="text-lg">
-          <strong>{Math.round(totals.kcal).toLocaleString()}</strong> of {targetKcal.toLocaleString()} kcal eaten ·{" "}
-          {Math.round(totals.proteinG)} of {targetProteinG} g protein
-        </p>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800" role="img" aria-label={`${pct}% of daily calories eaten`}>
-          <div className="h-full bg-emerald-600" style={{ width: `${pct}%` }} />
+    <div className="stagger space-y-5" aria-busy={pending}>
+      <section aria-label="Totals" className="card flex items-center gap-5">
+        <ProgressRing value={targetKcal > 0 ? totals.kcal / targetKcal : 0} size={96} stroke={9} label={`${pct}% of daily calories eaten`}>
+          <span className="text-xl font-bold tabular-nums">{Math.round(totals.kcal).toLocaleString()}</span>
+          <span className="text-[11px] muted">kcal eaten</span>
+        </ProgressRing>
+        <div className="min-w-0 flex-1 space-y-2 text-sm">
+          <p>
+            <span className="font-semibold">{Math.max(0, Math.round(targetKcal - totals.kcal)).toLocaleString()} kcal</span>{" "}
+            <span className="muted">left of {targetKcal.toLocaleString()}</span>
+          </p>
+          <div>
+            <p className="muted">
+              Protein {Math.round(totals.proteinG)} / {targetProteinG} g
+            </p>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800" aria-hidden="true">
+              <div
+                className="h-full rounded-full bg-[#059669] motion-safe:transition-[width] motion-safe:duration-700"
+                style={{ width: `${targetProteinG > 0 ? Math.min(100, (totals.proteinG / targetProteinG) * 100) : 0}%` }}
+              />
+            </div>
+          </div>
         </div>
       </section>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700 motion-safe:animate-fade-up dark:bg-red-950 dark:text-red-300">
           {error}
         </p>
       )}
@@ -124,16 +139,16 @@ export default function DiaryView({ date, entries, totals, targetKcal, targetPro
           <h2 id="planned" className="text-lg font-bold">
             From today&apos;s plan
           </h2>
-          <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+          <ul className="card divide-y divide-zinc-100 p-0 dark:divide-zinc-800">
             {planned.map((p) => (
-              <li key={p.meal} className="flex items-center justify-between gap-3 p-3 text-sm">
+              <li key={p.meal} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                 <span>
                   <span className="font-semibold">{MEAL_LABEL[p.meal]}:</span> {p.title} · {Math.round(p.kcal)} kcal
                 </span>
                 {p.logged ? (
-                  <span className="text-emerald-700 dark:text-emerald-400">✓ Logged</span>
+                  <span className="chip bg-emerald-100 text-emerald-800 motion-safe:animate-pop dark:bg-emerald-950 dark:text-emerald-300">✓ Logged</span>
                 ) : (
-                  <button type="button" disabled={pending} onClick={() => run(() => logPlannedMealAction(p.meal))} className="rounded-lg border border-zinc-300 px-3 py-1 font-medium disabled:opacity-60 dark:border-zinc-700">
+                  <button type="button" disabled={pending} onClick={() => run(() => logPlannedMealAction(p.meal))} className="btn btn-secondary px-3 py-1.5 text-xs">
                     I ate this<span className="sr-only"> ({MEAL_LABEL[p.meal]})</span>
                   </button>
                 )}
@@ -147,7 +162,7 @@ export default function DiaryView({ date, entries, totals, targetKcal, targetPro
         const items = entries.filter((e) => e.meal === m);
         if (items.length === 0) return null;
         return (
-          <section key={m} aria-labelledby={`log-${m}`}>
+          <section key={m} aria-labelledby={`log-${m}`} className="card py-3">
             <h2 id={`log-${m}`} className="font-bold">
               {MEAL_LABEL[m]}
             </h2>
@@ -171,19 +186,19 @@ export default function DiaryView({ date, entries, totals, targetKcal, targetPro
         );
       })}
 
-      <section aria-labelledby="add-food" className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <section aria-labelledby="add-food" className="card space-y-4">
         <h2 id="add-food" className="text-lg font-bold">
           Add food
         </h2>
         <div className="flex flex-wrap items-end gap-3">
-          <div className="flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="group" aria-label="How to add">
+          <div className="flex rounded-full bg-zinc-200/70 p-1 dark:bg-zinc-800" role="group" aria-label="How to add">
             {(["scan", "manual"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => setMode(m)}
                 aria-pressed={mode === m}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium ${mode === m ? "bg-white shadow-sm dark:bg-zinc-700" : "text-zinc-600 dark:text-zinc-400"}`}
+                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${mode === m ? "bg-white shadow-sm dark:bg-zinc-700" : "text-zinc-600 dark:text-zinc-400"}`}
               >
                 {m === "scan" ? "Packaged (barcode)" : "Type it in"}
               </button>
@@ -210,7 +225,7 @@ export default function DiaryView({ date, entries, totals, targetKcal, targetPro
               </p>
             )}
             {product && (
-              <div className="space-y-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900">
+              <div className="space-y-3 rounded-2xl bg-zinc-50 p-4 motion-safe:animate-fade-up dark:bg-zinc-800">
                 <p className="font-semibold">
                   {product.brand && `${product.brand} · `}
                   {product.name}
@@ -247,7 +262,7 @@ export default function DiaryView({ date, entries, totals, targetKcal, targetPro
                 ) : (
                   <p className="text-sm">No nutrition data for this product — please use &ldquo;Type it in&rdquo;.</p>
                 )}
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">{OFF_ATTRIBUTION}</p>
+                <p className="text-xs muted">{OFF_ATTRIBUTION}</p>
               </div>
             )}
           </div>

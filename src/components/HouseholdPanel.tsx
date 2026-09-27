@@ -6,10 +6,10 @@ import { createHouseholdAction, createInviteAction, joinHouseholdAction, leaveHo
 import { inviteMessage } from "@/lib/household";
 import type { Household } from "@/lib/household-server";
 
-const inputClass = "mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base dark:border-zinc-700";
-const primary = "rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60";
+const inputClass = "input mt-1 py-2.5";
+const primary = "btn btn-primary";
 const secondary =
-  "rounded-xl border border-zinc-300 px-4 py-2 font-semibold hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800";
+  "btn btn-secondary";
 
 export default function HouseholdPanel({ household, appUrl }: { household: Household | null; appUrl: string }) {
   const [pending, startTransition] = useTransition();
@@ -34,7 +34,7 @@ export default function HouseholdPanel({ household, appUrl }: { household: House
   }
 
   const errorBox = error && (
-    <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+    <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700 motion-safe:animate-fade-up dark:bg-red-950 dark:text-red-300">
       {error}
     </p>
   );
@@ -150,7 +150,7 @@ export default function HouseholdPanel({ household, appUrl }: { household: House
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <section className="space-y-3 card">
       <h2 className="text-lg font-bold">{title}</h2>
       {children}
     </section>

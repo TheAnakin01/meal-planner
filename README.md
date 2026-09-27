@@ -8,6 +8,10 @@ grocery apps, and works offline as an installable app.
 
 ## Features
 
+- **App-like design** — bottom tab bar (Today · Week · Shopping · Diary · More), animated calorie rings, colour-coded
+  meal cards, smooth page and card animations, light and dark mode. All motion switches off when your phone is set to
+  "reduce motion", and every screen works from 360px wide.
+- **Today** — a greeting, today's calories and macros at a glance, quick actions and today's meals with one-tap swap.
 - **Personal targets** — calories, protein, carbs and fat from age, weight, height, activity and goal (lose / maintain / gain).
 - **Strict allergen safety** — 16 allergens plus your own words, checked twice (ingredient tags *and* a word check)
   everywhere: recipes, plans, swaps, barcode scans and AI replies.
@@ -23,11 +27,26 @@ grocery apps, and works offline as an installable app.
 - **Food diary** — log planned meals in one tap, scan packaged food barcodes (Open Food Facts) with allergy warnings.
 - **Progress** — calorie-vs-target and weight charts, streaks and weekly averages.
 - **Installable & offline** — add to your home screen; Today, Week and your shopping list work without internet and
-  ticks sync later.
+  ticks sync later. The installed app updates itself when a new version is released.
 - **Meal reminders** — optional push notifications at your meal times.
 - **Household sharing** — invite family with a code; everyone keeps their own plan and allergies, and shares one
   combined shopping list that updates live on every phone. Members see only each other's chosen names.
 - **Discover** — extra recipe ideas from Spoonacular.
+
+## Project layout
+
+| Folder | What's in it |
+|---|---|
+| `src/app/` | Pages (Today = `dashboard`, `week`, `shopping`, `diary`, `progress`, `coach`, `household`, `profile`, `admin`, …) and API routes |
+| `src/components/` | Screens' building blocks; `AppNav` (tab bar + More sheet), `ui/` (icons, page header), `meal-ui` (meal colours/icons) |
+| `src/lib/` | Logic with unit tests: nutrition, allergen safety, diets, planner, shopping list, coach, diary, progress |
+| `supabase/migrations/` | Database tables and security rules, run in order |
+| `supabase/seed/` | Starter recipe library (79 recipes) |
+| `public/sw.js` | Offline support and reminders (service worker) |
+| `tests/` | Vitest unit tests |
+
+Shared styles live in `src/app/globals.css`: `card`, `btn` + `btn-primary` / `btn-secondary` / `btn-dark`, `chip`,
+`input`, `page`, `muted`, and the animations (`fade-up`, `pop`, `sheet-up`, `float`, `stagger`).
 
 ## Tech stack (all free tiers)
 

@@ -11,6 +11,7 @@ import {
   setPreferredStoreAction,
 } from "@/app/shopping/actions";
 import { applyPending, browserStorage, enqueueTick, flushOutbox, readOutbox } from "@/lib/outbox";
+import ProgressRing from "@/components/week/ProgressRing";
 import { createClient } from "@/lib/supabase/client";
 import type { CustomItem } from "@/lib/shopping-server";
 import {
@@ -170,16 +171,21 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
   const itemRow = (item: ShoppingItem) => {
     const isChecked = checked.has(item.ingredientId);
     return (
-      <li key={item.ingredientId} className="flex items-start gap-3 py-2">
-        <input
-          type="checkbox"
-          id={`item-${item.ingredientId}`}
-          checked={isChecked}
-          onChange={() => void toggle(item.ingredientId)}
-          className="mt-1 h-5 w-5 shrink-0 accent-emerald-700"
-        />
+      <li key={item.ingredientId} className="flex items-start gap-3 py-3">
+<span className="relative grid h-6 w-6 shrink-0 place-items-center mt-0.5">
+          <input
+            type="checkbox"
+            id={`item-${item.ingredientId}`}
+            checked={isChecked}
+            onChange={() => void toggle(item.ingredientId)}
+            className="peer h-6 w-6 cursor-pointer appearance-none rounded-full border-2 border-zinc-300 transition checked:border-emerald-600 checked:bg-emerald-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:opacity-60 dark:border-zinc-600"
+          />
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="pointer-events-none absolute scale-50 opacity-0 transition peer-checked:scale-100 peer-checked:opacity-100">
+            <path d="m5 12 5 5 9-10" />
+          </svg>
+        </span>
         <div className="min-w-0 flex-1">
-          <label htmlFor={`item-${item.ingredientId}`} className={`font-medium ${isChecked ? "text-zinc-600 line-through dark:text-zinc-400" : ""}`}>
+          <label htmlFor={`item-${item.ingredientId}`} className={`cursor-pointer font-medium transition ${isChecked ? "text-zinc-500 line-through dark:text-zinc-500" : ""}`}>
             {item.name}
           </label>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -205,14 +211,14 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
   };
 
   return (
-    <div className="space-y-6">
+    <div className="stagger space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <label className="text-sm font-medium">
           Buy from
           <select
             value={store}
             onChange={(e) => changeStore(e.target.value as StoreId)}
-            className="mt-1 block rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base dark:border-zinc-700"
+            className="input mt-1 w-auto py-2"
           >
             {STORES.map((s) => (
               <option key={s.id} value={s.id}>
@@ -227,14 +233,14 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
               href={whatsappShareUrl(shareText)}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+              className="btn btn-primary"
             >
               Share on WhatsApp<span className="sr-only"> (opens in a new tab)</span>
             </a>
             <button
               type="button"
               onClick={copyList}
-              className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              className="btn btn-secondary"
             >
               {copied ? "Copied!" : "Copy list"}
             </button>
@@ -242,42 +248,59 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
         )}
       </div>
 
-      <p className="text-sm text-zinc-600 dark:text-zinc-400" role="status">
-        {total === 0 ? "Nothing to buy yet." : `${done} of ${total} ticked`}
-        {waiting > 0 && ` · ${waiting} tick${waiting === 1 ? "" : "s"} waiting to sync`}
-      </p>
+      <div className="card flex items-center gap-4" role="status">
+        <ProgressRing value={total > 0 ? done / total : 0} size={64} stroke={7} label={`${done} of ${total} items ticked`}>
+          <span className="text-sm font-bold tabular-nums">{total > 0 ? Math.round((done / total) * 100) : 0}%</span>
+        </ProgressRing>
+        <div>
+          <p className="text-lg font-bold">
+            {total === 0 ? "Nothing to buy yet" : done === total ? "All done — happy cooking!" : `${done} of ${total} ticked`}
+          </p>
+          <p className="text-sm muted">
+            {waiting > 0 ? `${waiting} tick${waiting === 1 ? "" : "s"} waiting to sync` : "Tick items off as you shop."}
+          </p>
+        </div>
+      </div>
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700 motion-safe:animate-fade-up dark:bg-red-950 dark:text-red-300">
           {error}
         </p>
       )}
 
       {list.aisles.map((aisle) => (
-        <section key={aisle.aisle} aria-labelledby={`aisle-${aisle.aisle}`}>
-          <h2 id={`aisle-${aisle.aisle}`} className="font-bold">
+        <section key={aisle.aisle} aria-labelledby={`aisle-${aisle.aisle}`} className="card py-3">
+          <h2 id={`aisle-${aisle.aisle}`} className="flex items-center justify-between font-bold">
             {aisle.label}
+            <span className="chip">
+              {aisle.items.filter((i) => checked.has(i.ingredientId)).length}/{aisle.items.length}
+            </span>
           </h2>
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">{aisle.items.map(itemRow)}</ul>
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">{aisle.items.map(itemRow)}</ul>
         </section>
       ))}
 
-      <section aria-labelledby="extras">
+      <section aria-labelledby="extras" className="card py-3">
         <h2 id="extras" className="font-bold">
           Extra items
         </h2>
         {custom.length > 0 && (
           <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
             {custom.map((c) => (
-              <li key={c.id} className="flex items-center gap-3 py-2">
-                <input
-                  type="checkbox"
-                  id={`custom-${c.id}`}
-                  checked={c.checked}
-                  disabled={pending}
-                  onChange={() => run(() => setCustomCheckedAction(c.id, !c.checked, scope))}
-                  className="h-5 w-5 shrink-0 accent-emerald-700"
-                />
-                <label htmlFor={`custom-${c.id}`} className={`flex-1 ${c.checked ? "text-zinc-600 line-through dark:text-zinc-400" : ""}`}>
+              <li key={c.id} className="flex items-center gap-3 py-3">
+<span className="relative grid h-6 w-6 shrink-0 place-items-center">
+          <input
+            type="checkbox"
+            id={`custom-${c.id}`}
+            checked={c.checked}
+            disabled={pending}
+            onChange={() => run(() => setCustomCheckedAction(c.id, !c.checked, scope))}
+            className="peer h-6 w-6 cursor-pointer appearance-none rounded-full border-2 border-zinc-300 transition checked:border-emerald-600 checked:bg-emerald-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:opacity-60 dark:border-zinc-600"
+          />
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="pointer-events-none absolute scale-50 opacity-0 transition peer-checked:scale-100 peer-checked:opacity-100">
+            <path d="m5 12 5 5 9-10" />
+          </svg>
+        </span>
+                <label htmlFor={`custom-${c.id}`} className={`flex-1 cursor-pointer ${c.checked ? "text-zinc-500 line-through" : ""}`}>
                   {c.label}
                 </label>
                 <button type="button" disabled={pending} onClick={() => run(() => deleteCustomItemAction(c.id, scope))} className={linkButton}>
@@ -297,12 +320,12 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
             onChange={(e) => setNewItem(e.target.value)}
             maxLength={80}
             placeholder="e.g. dish soap, bananas"
-            className="block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/30 dark:border-zinc-700"
+            className="input py-2.5"
           />
           <button
             type="submit"
             disabled={pending || newItem.trim() === ""}
-            className="shrink-0 rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+            className="btn btn-primary shrink-0"
           >
             Add
           </button>
@@ -310,7 +333,7 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
       </section>
 
       {list.pantry.length > 0 && (
-        <section aria-labelledby="pantry" className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <section aria-labelledby="pantry" className="card">
           <h2 id="pantry" className="font-bold">
             Already at home (pantry)
           </h2>

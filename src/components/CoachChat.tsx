@@ -16,10 +16,8 @@ interface Props {
   remaining: number;
 }
 
-const primaryButton =
-  "rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60";
-const secondaryButton =
-  "rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800";
+const primaryButton = "btn btn-primary";
+const secondaryButton = "btn btn-secondary py-2";
 
 export default function CoachChat({ enabled, messages, remaining: initialRemaining }: Props) {
   const [pending, startTransition] = useTransition();
@@ -79,7 +77,7 @@ export default function CoachChat({ enabled, messages, remaining: initialRemaini
 
   if (!enabled) {
     return (
-      <section aria-labelledby="coach-notice" className="space-y-4 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <section aria-labelledby="coach-notice" className="card space-y-4">
         <h2 id="coach-notice" className="text-xl font-bold">
           Before you start
         </h2>
@@ -118,7 +116,7 @@ export default function CoachChat({ enabled, messages, remaining: initialRemaini
     <div className="space-y-4">
       <div className="space-y-3" aria-live="polite">
         {items.length === 0 && !asked && (
-          <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
+          <div className="card border-dashed text-sm">
             <p>Ask about your plan, protein, portions or cooking. Try:</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (
@@ -139,16 +137,21 @@ export default function CoachChat({ enabled, messages, remaining: initialRemaini
         {asked && (
           <>
             <Bubble role="user" text={asked} />
-            <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">
-              Coach is thinking… (the free service can take up to a minute)
-            </p>
+            <div role="status" className="flex items-center gap-3 text-sm muted motion-safe:animate-fade-up">
+              <span className="flex gap-1 rounded-2xl rounded-bl-md border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900" aria-hidden="true">
+                <span className="h-2 w-2 rounded-full bg-zinc-400 motion-safe:animate-bounce" />
+                <span className="h-2 w-2 rounded-full bg-zinc-400 motion-safe:animate-bounce [animation-delay:150ms]" />
+                <span className="h-2 w-2 rounded-full bg-zinc-400 motion-safe:animate-bounce [animation-delay:300ms]" />
+              </span>
+              Coach is thinking… (can take up to a minute)
+            </div>
           </>
         )}
         <div ref={endRef} />
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700 motion-safe:animate-fade-up dark:bg-red-950 dark:text-red-300">
           {error}
         </p>
       )}
@@ -176,10 +179,10 @@ export default function CoachChat({ enabled, messages, remaining: initialRemaini
           rows={2}
           maxLength={1000}
           placeholder="Ask your coach…"
-          className="block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/30 dark:border-zinc-700"
+          className="input"
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs text-zinc-600 dark:text-zinc-400">{remaining} questions left today</span>
+          <span className="chip">{remaining} questions left today</span>
           <button type="submit" disabled={pending || question.trim() === "" || remaining <= 0} className={primaryButton}>
             Ask
           </button>
@@ -218,7 +221,7 @@ function ActionCard({
   onResolve: (confirm: boolean) => void;
 }) {
   return (
-    <div className="max-w-[85%] rounded-2xl border border-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-zinc-900 dark:bg-emerald-950 dark:text-zinc-100">
+    <div className="max-w-[85%] rounded-3xl rounded-bl-md border border-emerald-600/40 bg-gradient-to-br from-emerald-50 to-white px-4 py-3 text-sm text-zinc-900 shadow-sm motion-safe:animate-fade-up dark:from-emerald-950 dark:to-zinc-900 dark:text-zinc-100">
       <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">Coach suggests</p>
       <p className="mt-1">{message.content}</p>
       {message.actionStatus === "proposed" ? (
@@ -227,7 +230,7 @@ function ActionCard({
             type="button"
             disabled={pending}
             onClick={() => onResolve(true)}
-            className="rounded-lg bg-emerald-700 px-3 py-1.5 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+            className="btn btn-primary px-4 py-1.5"
           >
             Confirm
           </button>
@@ -235,7 +238,7 @@ function ActionCard({
             type="button"
             disabled={pending}
             onClick={() => onResolve(false)}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 font-semibold hover:bg-white disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-900"
+            className="btn btn-secondary px-4 py-1.5"
           >
             Cancel
           </button>
@@ -252,10 +255,12 @@ function ActionCard({
 function Bubble({ role, text }: { role: "user" | "model"; text: string }) {
   const mine = role === "user";
   return (
-    <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+    <div className={`flex motion-safe:animate-fade-up ${mine ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
-          mine ? "bg-emerald-700 text-white" : "border border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+        className={`max-w-[85%] whitespace-pre-wrap rounded-3xl px-4 py-2.5 text-sm shadow-sm ${
+          mine
+            ? "rounded-br-md bg-emerald-700 text-white"
+            : "rounded-bl-md border border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
         }`}
       >
         <span className="sr-only">{mine ? "You: " : "Coach: "}</span>

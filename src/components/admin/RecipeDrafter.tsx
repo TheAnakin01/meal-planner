@@ -15,9 +15,9 @@ const inputClass =
   "mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-base " +
   "focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/30 dark:border-zinc-700";
 const primaryButton =
-  "rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60";
+  "btn btn-primary";
 const secondaryButton =
-  "rounded-xl border border-zinc-300 px-4 py-2 font-semibold hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800";
+  "btn btn-secondary";
 
 const MEALS: { id: MealType; label: string }[] = [
   { id: "breakfast", label: "Breakfast" },
@@ -73,7 +73,7 @@ export default function RecipeDrafter() {
 
   return (
     <div className="space-y-8">
-      <form onSubmit={draft} className="space-y-5 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <form onSubmit={draft} className="space-y-5 card">
         <label className="block text-sm font-medium">
           Describe the dish
           <textarea
@@ -139,7 +139,7 @@ export default function RecipeDrafter() {
         </p>
       )}
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700 motion-safe:animate-fade-up dark:bg-red-950 dark:text-red-300">
           {error}
         </p>
       )}
@@ -206,7 +206,7 @@ export default function RecipeDrafter() {
               <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Calculated by our engine from your library — not by the AI.</p>
             </div>
           ) : (
-            <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
               {unmatched.length} ingredient{unmatched.length === 1 ? " isn't" : "s aren't"} in your library yet. Add{" "}
               {unmatched.length === 1 ? "it" : "them"} (links open in a new tab), then press <strong>Check again</strong>.
             </p>

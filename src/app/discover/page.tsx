@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import MealPlan, { MealPlanSkeleton } from "@/components/MealPlan";
 import { calculateNutritionPlan } from "@/lib/nutrition";
 import { getCurrentProfile } from "@/lib/profile-server";
+import PageHeader from "@/components/ui/PageHeader";
+import { CompassIcon } from "@/components/ui/icons";
 
 export const metadata: Metadata = {
   title: "Discover · Meal Planner",
@@ -18,20 +20,19 @@ export default async function DiscoverPage() {
   const plan = calculateNutritionPlan(profile);
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 sm:py-12">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Discover</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Fresh ideas from the web, sized to your meals</p>
-        </div>
-        <Link
-          href="/dashboard/saved"
-          className="shrink-0 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Saved
-        </Link>
-      </div>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+    <main className="page">
+      <PageHeader
+        icon={CompassIcon}
+        tint="bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300"
+        title="Discover"
+        intro="Fresh ideas from the web, sized to your meals"
+        action={
+          <Link href="/dashboard/saved" className="btn btn-secondary py-2">
+            Saved
+          </Link>
+        }
+      />
+      <p className="text-sm muted">
         These come from Spoonacular and aren&apos;t in your weekly plan or shopping list. Save ones you like with ♡.
       </p>
 
