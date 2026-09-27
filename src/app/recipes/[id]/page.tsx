@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { allergenLabel } from "@/lib/allergens";
 import { dietLabel } from "@/lib/diet";
 import { type RecipeRow, recipeFromRow } from "@/lib/library";
+import { getAllIngredients } from "@/lib/library-server";
 import { getCurrentProfile } from "@/lib/profile-server";
 import { DEFAULT_STORE, storeName, storeSearchUrl } from "@/lib/stores";
+import { type SwapSuggestion, suggestSwaps } from "@/lib/swaps";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -16,8 +18,12 @@ interface LineRow {
   grams: number | string;
   display_amount: string;
   note: string;
-  ingredients: { name: string; search_term: string } | null;
+  ingredients: { id: number; name: string; search_term: string } | null;
 }
+
+// Water, salt and pinches of spice aren't worth swapping.
+const NOT_SWAPPABLE = new Set(["water", "salt"]);
+const MIN_SWAP_GRAMS = 5;
 
 // Portions shown in the plan are 0.5×–2× in 0.25 steps; anything else falls back to 1 serving.
 function parsePortion(value: unknown): number {
@@ -41,12 +47,20 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
 
   const { data: lines } = await supabase
     .from("recipe_ingredients")
-    .select("grams, display_amount, note, ingredients(name, search_term)")
+    .select("grams, display_amount, note, ingredients(id, name, search_term)")
     .eq("recipe_id", recipeId)
     .order("position")
     .returns<LineRow[]>();
 
-  const store = (await getCurrentProfile())?.preferredStore ?? DEFAULT_STORE;
+  const [profile, library] = await Promise.all([getCurrentProfile(), getAllIngredients()]);
+  const store = profile?.preferredStore ?? DEFAULT_STORE;
+  const byId = new Map(library.map((i) => [i.id, i]));
+  // Safe substitutes for each ingredient (only for ingredients worth swapping).
+  const swapsFor = (l: LineRow): SwapSuggestion[] => {
+    const original = l.ingredients && byId.get(Number(l.ingredients.id));
+    if (!profile || !original || NOT_SWAPPABLE.has(original.name) || Number(l.grams) < MIN_SWAP_GRAMS) return [];
+    return suggestSwaps(original, Number(l.grams), library, profile);
+  };
   const n = recipe.perServing;
   const totalMinutes = recipe.prepMinutes + recipe.cookMinutes;
 
@@ -89,10 +103,13 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
           Ingredients <span className="text-sm font-normal text-zinc-600 dark:text-zinc-400">(whole recipe)</span>
         </h2>
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          &ldquo;Buy&rdquo; opens {storeName(store)} (change it on your shopping list).
+          &ldquo;Buy&rdquo; opens {storeName(store)} (change it on your shopping list). &ldquo;Swap ideas&rdquo; only suggest
+          ingredients that suit your diet and allergies.
         </p>
         <ul className="mt-2 divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-          {(lines ?? []).map((l, i) => (
+          {(lines ?? []).map((l, i) => {
+            const swaps = swapsFor(l);
+            return (
             <li key={i} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 p-3 text-sm">
               <span className="font-medium">{l.ingredients?.name ?? "ingredient"}</span>
               <span className="flex items-baseline gap-3 text-zinc-600 dark:text-zinc-400">
@@ -111,8 +128,25 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
                   </a>
                 )}
               </span>
+              {swaps.length > 0 && (
+                <details className="w-full">
+                  <summary className="cursor-pointer text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                    Swap ideas<span className="sr-only"> for {l.ingredients?.name}</span>
+                  </summary>
+                  <ul className="mt-1 space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    {swaps.map((s) => (
+                      <li key={s.ingredient.id}>
+                        Use <span className="font-semibold text-zinc-900 dark:text-zinc-100">{s.grams} g {s.ingredient.name}</span>{" "}
+                        instead — about the same calories
+                        {Math.abs(s.proteinDiff) >= 1 && `, ${s.proteinDiff > 0 ? "+" : "−"}${Math.abs(s.proteinDiff)} g protein`}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       </section>
 

@@ -609,7 +609,10 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       weight change), calories-vs-target columns (14 days) and weight line — hand-built SVG following the dataviz skill
       (single series #059669 validated light+dark, hairline grid, tooltips on hover/focus, table view, drawn at measured
       pixel width so text stays 11px on phones). Offers to copy the latest weigh-in into the profile when ≥1 kg off.
-- [ ] **Step 30 — Smart swaps:** allergen-safe substitutions that keep macros close.
+- [x] **Step 30 — Smart swaps:** allergen-safe substitutions that keep macros close.
+      `src/lib/swaps.ts`: substitutes must pass allergies (tags + words), other allergies and diet (flags + words); ranked by
+      macro-balance similarity (+ same aisle), grams matched to calories (0.25×–4×), max 3. Shown as "Swap ideas" on
+      `/recipes/[id]` (not for water, salt or < 5 g). Quality depends on library size.
 - [ ] **Step 31 — Reminders:** web push for meal times (VAPID keys, opt-in).
 - [ ] **Step 32 — Household sharing:** invite family, shared plan + live shopping list (Supabase Realtime).
 - [ ] **Step 33 — v2 launch check:** full phone walkthrough online + offline, a11y audit, security/RLS review,
