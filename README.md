@@ -8,7 +8,7 @@ grocery apps, and works offline as an installable app.
 
 ## Features
 
-- **App-like design** — bottom tab bar (Today · Week · Shopping · Diary · More), animated calorie rings, colour-coded
+- **App-like design** — soft blurred background (light and dark), bottom tab bar (Today · Week · Shopping · Diary · More), animated calorie rings, colour-coded
   meal cards, smooth page and card animations, light and dark mode. All motion switches off when your phone is set to
   "reduce motion", and every screen works from 360px wide.
 - **Today** — a greeting, today's calories and macros at a glance, quick actions and today's meals with one-tap swap.
@@ -43,6 +43,7 @@ grocery apps, and works offline as an installable app.
 | `supabase/migrations/` | Database tables and security rules, run in order |
 | `supabase/seed/` | Starter recipe library (79 recipes) |
 | `public/sw.js` | Offline support and reminders (service worker) |
+| `public/bg/` | Blurred background pictures, made by `node scripts/generate-backgrounds.mjs` |
 | `tests/` | Vitest unit tests |
 
 Shared styles live in `src/app/globals.css`: `card`, `btn` + `btn-primary` / `btn-secondary` / `btn-dark`, `chip`,
@@ -81,7 +82,9 @@ Add the same variables in Vercel → Settings → Environment Variables, then re
 
 ### Database
 
-Run the files in `supabase/migrations/` **in order** (0001 → latest) in the Supabase SQL Editor. For reminders, also
+The Supabase GitHub integration applies new files in `supabase/migrations/` automatically when they're pushed to
+`main` (see the **Supabase Preview** check on each commit). Without the integration, run them **in order**
+(0001 → latest) in the Supabase SQL Editor instead — never both. For reminders, also
 enable the `pg_cron` and `pg_net` extensions and run the scheduler SQL kept locally in `supabase/local/`
 (git-ignored because it contains a secret).
 

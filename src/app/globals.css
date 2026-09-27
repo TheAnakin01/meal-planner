@@ -112,3 +112,19 @@ body {
   .stagger > *:nth-child(6) { animation-delay: 300ms; }
   .stagger > *:nth-child(n + 7) { animation-delay: 360ms; }
 }
+
+/* Soft blurred picture behind every page (public/bg, made by scripts/generate-backgrounds.mjs).
+   A fixed layer instead of background-attachment: fixed, which phones handle badly. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--background) url("/bg/light.webp") center / cover no-repeat;
+}
+@media (prefers-color-scheme: dark) {
+  body::before {
+    background-image: url("/bg/dark.webp");
+  }
+}

@@ -666,6 +666,9 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
   Diary · More. "More" is a `<dialog>` bottom sheet (focus trap, Esc, backdrop tap) with Progress, AI coach, Household,
   Discover, Saved, Profile, Recipe library (admins), Sign out. `session-server.ts` caches the sign-in/admin lookup per
   request so header + tab bar share it.
+- **Background:** `public/bg/light.webp` / `dark.webp` (~8 KB each, blurred colour blobs + fine grain, from
+  `scripts/generate-backgrounds.mjs`) on a fixed `body::before` layer (z-index −1; not background-attachment: fixed,
+  which phones handle badly). The service worker caches `/bg/` cache-first. axe contrast passes on top of both.
 - **Tokens/utilities** in `globals.css`: background #f6f7f4 / #09090b; `card`, `btn` (+ `btn-primary`, `btn-secondary`,
   `btn-dark`), `chip`, `input`, `page` (main container), `muted`. Use these instead of one-off class strings.
 - **Motion:** `fade-up`, `slide-from-left/right`, `pop`, `sheet-up`, `float`, `.stagger` (children fade in one by one),
@@ -677,6 +680,19 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
 - **Checks for any UI change:** axe (WCAG 2 A/AA + best practice) light and dark at 375px, no horizontal scroll at 360px.
   The preview browser can't sign in: render components on a temporary `src/app/dev-preview/page.tsx` and delete it
   before committing. Screenshots may time out when the app window is hidden — use DOM checks then.
+
+## 25. Database migrations are applied by the Supabase GitHub integration (found 2026-09-27)
+
+- The owner's Supabase project is connected to the GitHub repo. On every push to `main` the **"Supabase Preview"**
+  check applies any new `supabase/migrations/*` files to the **production** project and records them in
+  `supabase_migrations.schema_migrations`. It had applied 0001–0002 itself (why the owner's manual runs said
+  "already exists"), then failed on every push from 0003 on ("column diet_type already exists") because 0003–0013
+  were run by hand. A failed run changes nothing (it stops at the first statement).
+- Fix: a one-off SQL given to the owner on 2026-09-27 marks 0001–0013 as applied (insert into
+  `supabase_migrations.schema_migrations (version, name)` … on conflict do nothing).
+- **From now on: add a new migration file and push — do NOT also ask the owner to run it in the SQL Editor.**
+  Then check the "Supabase Preview" result on the commit (GitHub API check-runs). Seed/one-off SQL (e.g.
+  `supabase/seed/`, `supabase/local/`) is not applied automatically and is still run by hand.
 
 ## 23. v2 free-plan limits to design around
 

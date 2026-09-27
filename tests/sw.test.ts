@@ -164,6 +164,13 @@ describe("service worker", () => {
     expect((await sw.get("/_next/static/app.js", "no-cors"))?.body).toBe("content of /_next/static/app.js");
   });
 
+  it("keeps the background picture for offline use", async () => {
+    sw.server.set(keyOf("/bg/dark.webp"), response("dark background"));
+    await sw.get("/bg/dark.webp", "no-cors");
+    sw.setOnline(false);
+    expect((await sw.get("/bg/dark.webp", "no-cors"))?.body).toBe("dark background");
+  });
+
   it("saves pages the app asks for (in-app navigation), but only our own savable pages", async () => {
     sw.server.set(keyOf("/shopping"), response("content of /shopping"));
     await sw.dispatch("message", { data: { type: "cache-pages", paths: ["/shopping", "/discover", "/admin", "https://evil.example/x"] } });

@@ -1,7 +1,7 @@
 // Meal Planner service worker (CLAUDE.md §19): lets the installed app open offline.
 //
 // What is saved on the phone:
-//   - the app's own files (/_next/static, icons, manifest)                      → cache-first
+//   - the app's own files (/_next/static, icons, backgrounds, manifest)                      → cache-first
 //   - YOUR pages once visited: Today, Week, Shopping list, recipes, profile      → network-first
 // Never saved: other websites (Spoonacular images, Supabase, stores), /discover (Spoonacular data may
 // not be stored), admin pages, form submissions. Signing out deletes the saved pages.
@@ -76,7 +76,7 @@ async function saveOfflinePage() {
 }
 
 function isStaticAsset(url) {
-  return url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname === "/icon.png";
+  return url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/bg/") || url.pathname === "/icon.png";
 }
 
 async function cacheFirst(request) {
