@@ -177,7 +177,7 @@ function pick(ctx: PickContext, day: number, meal: MealType, planned: readonly P
 export interface PlanOptions {
   seed: number;
   leftovers: boolean;
-  locked?: readonly PlanSlot[]; // kept exactly as they are
+  keep?: readonly PlanSlot[]; // kept exactly as they are (locked meals, or other days when regenerating one day)
 }
 
 export function generateWeek(
@@ -188,7 +188,7 @@ export function generateWeek(
 ): PlanResult {
   const candidates = eligibleRecipes(recipes, profile);
   const ctx: PickContext = { candidates, targets, macroTarget: macroShares(targets.macros), random: seededRandom(options.seed) };
-  const slots: PlanSlot[] = (options.locked ?? []).map((s) => ({ ...s, locked: true }));
+  const slots: PlanSlot[] = (options.keep ?? []).map((s) => ({ ...s }));
   const gaps: PlanResult["gaps"] = [];
   let relaxed = false;
   let poorFit = false;
@@ -222,12 +222,12 @@ export function generateWeek(
   }
 
   const notes: string[] = [];
-  if (candidates.length === 0) notes.push("No recipes in the library suit this person's diet and allergies yet.");
-  if (relaxed) notes.push("Some recipes repeat more than usual because only a few recipes suit this person yet.");
-  if (poorFit) notes.push("Some meals are more than 10% away from their calorie target because no better-fitting recipe suits this person yet.");
+  if (candidates.length === 0) notes.push("No recipes in the library suit your diet and allergies yet.");
+  if (relaxed) notes.push("Some recipes repeat more than usual because only a few recipes suit you yet.");
+  if (poorFit) notes.push("Some meals are more than 10% away from their calorie target because no better-fitting recipe suits you yet.");
   for (const meal of MEALS) {
     if (candidates.length > 0 && !candidates.some((r) => r.mealTypes.includes(meal))) {
-      notes.push(`No ${meal} recipes suit this person yet.`);
+      notes.push(`No ${meal} recipes suit you yet.`);
     }
   }
   slots.sort((a, b) => a.day - b.day || MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal));

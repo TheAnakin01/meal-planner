@@ -134,7 +134,7 @@ describe("generateWeek", () => {
 
   it("keeps locked meals exactly", () => {
     const lock: PlanSlot = { day: 2, meal: "dinner", recipeId: library.find((r) => r.title === "Chole")!.id, portion: 1.5, locked: true, isLeftover: false };
-    const locked = generateWeek(library, vegNoAllergies, targets, { seed: 42, leftovers: false, locked: [lock] });
+    const locked = generateWeek(library, vegNoAllergies, targets, { seed: 42, leftovers: false, keep: [lock] });
     expect(locked.slots.find((s) => s.day === 2 && s.meal === "dinner")).toEqual(lock);
   });
 
@@ -152,7 +152,7 @@ describe("generateWeek", () => {
     const tiny = [library.find((r) => r.title === "Besan Chilla")!, library.find((r) => r.title === "Dal Rice")!];
     const result = generateWeek(tiny, vegNoAllergies, targets, { seed: 1, leftovers: false });
     expect(result.slots).toHaveLength(21);
-    expect(result.notes).toContain("Some recipes repeat more than usual because only a few recipes suit this person yet.");
+    expect(result.notes).toContain("Some recipes repeat more than usual because only a few recipes suit you yet.");
   });
 
   it("reports gaps instead of ever showing an unsafe meal", () => {
@@ -160,14 +160,14 @@ describe("generateWeek", () => {
     const result = generateWeek(onlyChicken, vegNoAllergies, targets, { seed: 1, leftovers: false });
     expect(result.slots).toEqual([]);
     expect(result.gaps).toHaveLength(21);
-    expect(result.notes).toEqual(["No recipes in the library suit this person's diet and allergies yet."]);
+    expect(result.notes).toEqual(["No recipes in the library suit your diet and allergies yet."]);
   });
 
   it("says which meal has no recipes", () => {
     const noBreakfast = library.filter((r) => !r.mealTypes.includes("breakfast"));
     const result = generateWeek(noBreakfast, vegNoAllergies, targets, { seed: 1, leftovers: false });
     expect(result.gaps.filter((g) => g.meal === "breakfast")).toHaveLength(7);
-    expect(result.notes).toContain("No breakfast recipes suit this person yet.");
+    expect(result.notes).toContain("No breakfast recipes suit you yet.");
   });
 });
 

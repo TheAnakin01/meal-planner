@@ -35,13 +35,16 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {isAdmin && (
-        <p className="mb-6 text-sm">
+      <div className="mb-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        <Link href="/week" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+          This week&apos;s meal plan →
+        </Link>
+        {isAdmin && (
           <Link href="/admin" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
             Recipe library (admin) →
           </Link>
-        </p>
-      )}
+        )}
+      </div>
 
       <MacroSummary plan={plan} excluding={excluding} diet={dietLabel(profile.dietType)} />
 

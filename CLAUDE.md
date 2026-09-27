@@ -553,7 +553,10 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       fit → heavy repeats; same-day repeats only as last resort) and explains relaxations in `notes`; gaps are left
       empty rather than filled unsafely; `swapMeal`, `dayTotals`, `weekStart` (Monday in user timezone).
       Importer also warns when a dry staple looks like a cooked value (< 250 kcal/100 g).
-- [ ] **Step 20 — Week view UI:** 7-day plan, daily totals, swap / lock / regenerate, recipe detail page.
+- [x] **Step 20 — Week view UI:** 7-day plan, daily totals, swap / lock / regenerate, recipe detail page.
+      Migration 0006 (`meal_plans`, `meal_plan_items`, `profiles.leftovers_mode`). `/week` creates the plan on first
+      visit; meals whose recipe no longer suits the user are dropped on load ("Fill" refills). `/recipes/[id]` shows the
+      user's portion. Actions in `src/app/week/actions.ts`.
 - [ ] **Step 21 — Shopping list:** generation, unit rounding, aisles, tick-off, custom items, pantry.
 - [ ] **Step 22 — Buy online & share:** store links (§17), preferred store, WhatsApp share, copy list.
 - [ ] **Step 23 — Today view:** v1 dashboard reads today's meals from the week plan; Spoonacular moves to "Discover".
