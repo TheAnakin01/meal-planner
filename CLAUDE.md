@@ -604,7 +604,11 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       manual entry, barcode via the browser's BarcodeDetector camera API on Android Chrome or typed digits). OFF lookups
       server-side with custom User-Agent, cached 1 day; OFF allergen/trace tags + our word check → red/amber warnings;
       nutrition for planned/barcode entries computed on the server.
-- [ ] **Step 29 — Progress insights:** weight trend, adherence charts, streaks.
+- [x] **Step 29 — Progress insights:** weight trend, adherence charts, streaks.
+      Migration 0011 (`weight_log`, one per day). `/progress`: stat tiles (streak, days on target, 7-day averages, 30-day
+      weight change), calories-vs-target columns (14 days) and weight line — hand-built SVG following the dataviz skill
+      (single series #059669 validated light+dark, hairline grid, tooltips on hover/focus, table view, drawn at measured
+      pixel width so text stays 11px on phones). Offers to copy the latest weigh-in into the profile when ≥1 kg off.
 - [ ] **Step 30 — Smart swaps:** allergen-safe substitutions that keep macros close.
 - [ ] **Step 31 — Reminders:** web push for meal times (VAPID keys, opt-in).
 - [ ] **Step 32 — Household sharing:** invite family, shared plan + live shopping list (Supabase Realtime).

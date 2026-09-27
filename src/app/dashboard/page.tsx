@@ -72,6 +72,9 @@ export default async function DashboardPage() {
         <Link href="/diary" className={linkClass}>
           Food diary →
         </Link>
+        <Link href="/progress" className={linkClass}>
+          Progress →
+        </Link>
         <Link href="/coach" className={linkClass}>
           Ask your AI coach →
         </Link>
