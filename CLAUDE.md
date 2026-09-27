@@ -599,7 +599,11 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       the chat updates itself. Gemini calls share a ~75 s deadline across model fallbacks.
 
 **Phase E — Add-ons**
-- [ ] **Step 28 — Food diary + barcode:** manual log, recipe log, Open Food Facts barcode scan (with attribution).
+- [x] **Step 28 — Food diary + barcode:** manual log, recipe log, Open Food Facts barcode scan (with attribution).
+      Migration 0010 (`food_log`). `/diary` (day navigation, totals vs targets, one-tap log of today's planned meals,
+      manual entry, barcode via the browser's BarcodeDetector camera API on Android Chrome or typed digits). OFF lookups
+      server-side with custom User-Agent, cached 1 day; OFF allergen/trace tags + our word check → red/amber warnings;
+      nutrition for planned/barcode entries computed on the server.
 - [ ] **Step 29 — Progress insights:** weight trend, adherence charts, streaks.
 - [ ] **Step 30 — Smart swaps:** allergen-safe substitutions that keep macros close.
 - [ ] **Step 31 — Reminders:** web push for meal times (VAPID keys, opt-in).

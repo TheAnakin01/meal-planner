@@ -15,7 +15,7 @@ const OFFLINE_URL = "/offline";
 // App files only. The offline page is kept with the personal pages (its header can show the user's
 // email), so signing out removes it too; it's re-saved on the next online visit.
 const PRECACHE = ["/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
-const OFFLINE_PAGES = [/^\/dashboard$/, /^\/week$/, /^\/shopping$/, /^\/recipes\/\d+$/, /^\/profile$/];
+const OFFLINE_PAGES = [/^\/dashboard$/, /^\/week$/, /^\/shopping$/, /^\/recipes\/\d+$/, /^\/profile$/, /^\/diary$/];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(Promise.all([caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE)), saveOfflinePage()]));
