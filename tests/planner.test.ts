@@ -7,6 +7,7 @@ import {
   type PlannerProfile,
   type PlannerRecipe,
   bestPortion,
+  dayIndex,
   dayTotals,
   eligibleRecipes,
   generateWeek,
@@ -210,5 +211,13 @@ describe("weekStart", () => {
     expect(weekStart(new Date("2026-09-27T20:00:00Z"), "Asia/Kolkata")).toBe("2026-09-28");
     // …but still Sunday in New York.
     expect(weekStart(new Date("2026-09-27T20:00:00Z"), "America/New_York")).toBe("2026-09-21");
+  });
+});
+
+describe("dayIndex", () => {
+  it("counts Monday as 0 in the person's timezone", () => {
+    expect(dayIndex(new Date("2026-09-28T06:00:00Z"), "Asia/Kolkata")).toBe(0); // Monday
+    expect(dayIndex(new Date("2026-09-27T20:00:00Z"), "Asia/Kolkata")).toBe(0); // already Monday in India
+    expect(dayIndex(new Date("2026-09-27T20:00:00Z"), "America/New_York")).toBe(6); // still Sunday
   });
 });

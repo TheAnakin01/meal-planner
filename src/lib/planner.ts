@@ -276,6 +276,12 @@ export function dayTotals(slots: readonly PlanSlot[], day: number, recipesById: 
   return { kcal: round(total.kcal), proteinG: round(total.proteinG), carbsG: round(total.carbsG), fatG: round(total.fatG), fiberG: round(total.fiberG) };
 }
 
+// 0 = Monday … 6 = Sunday for `date` in the given timezone.
+export function dayIndex(date: Date, timeZone: string): number {
+  const weekday = new Intl.DateTimeFormat("en-GB", { timeZone, weekday: "short" }).format(date);
+  return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(weekday);
+}
+
 // Monday of the week containing `date`, as YYYY-MM-DD in the given timezone.
 export function weekStart(date: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", weekday: "short" })

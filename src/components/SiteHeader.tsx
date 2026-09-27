@@ -28,13 +28,13 @@ export default async function SiteHeader() {
               href="/dashboard"
               className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 sm:px-3 dark:text-emerald-300 dark:hover:bg-emerald-950"
             >
-              My plan
+              Today
             </Link>
             <Link
-              href="/dashboard/saved"
+              href="/week"
               className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 sm:px-3 dark:text-emerald-300 dark:hover:bg-emerald-950"
             >
-              Saved
+              Week
             </Link>
             <span className="hidden truncate text-sm text-zinc-600 sm:inline dark:text-zinc-400">
               {email}

@@ -563,7 +563,9 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
 - [x] **Step 22 — Buy online & share:** store links (§17), preferred store, WhatsApp share, copy list.
       "Buy on <store>" per shopping item and per recipe ingredient; store picker on /shopping saves
       `profiles.preferred_store`; WhatsApp/copy share unticked items (`buildShareText`).
-- [ ] **Step 23 — Today view:** v1 dashboard reads today's meals from the week plan; Spoonacular moves to "Discover".
+- [x] **Step 23 — Today view:** v1 dashboard reads today's meals from the week plan; Spoonacular moves to "Discover".
+      `/dashboard` = Today (targets + today's slots + Swap/Fill); `/discover` = Spoonacular ideas (~4 points/visit) with
+      link to Saved; header links: Today, Week, Sign out.
 
 **Phase C — Offline-first app**
 - [ ] **Step 24 — Installable PWA:** manifest, icons, install prompt, iPhone instructions.

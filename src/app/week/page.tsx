@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import WeekView, { type WeekDay } from "@/components/WeekView";
-import { MEALS, dayTotals, weekStart } from "@/lib/planner";
+import { MEALS, dayIndex, dayTotals, weekStart } from "@/lib/planner";
 import { getOrCreateWeekPlan } from "@/lib/plan-server";
 import { getCurrentProfile } from "@/lib/profile-server";
 
@@ -18,9 +18,7 @@ export default async function WeekPage() {
   const byId = new Map(plan.recipes.map((r) => [r.id, r]));
   const today = new Date();
   const todayWeek = weekStart(today, profile.timezone);
-  const todayIndex = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(
-    new Intl.DateTimeFormat("en-GB", { timeZone: profile.timezone, weekday: "short" }).format(today),
-  );
+  const todayIndex = dayIndex(today, profile.timezone);
   const monday = new Date(`${plan.weekStart}T12:00:00Z`);
   const label = (day: number) => {
     const date = new Date(monday);

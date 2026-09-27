@@ -23,13 +23,13 @@ export default async function SavedRecipesPage() {
         <div className="mt-6 rounded-xl border border-dashed border-zinc-300 p-6 text-center dark:border-zinc-700">
           <p>You haven&apos;t saved any recipes yet.</p>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Tap <span aria-hidden>♡</span> Save on a recipe in your plan to keep it here.
+            Tap <span aria-hidden>♡</span> Save on a recipe in Discover to keep it here.
           </p>
           <Link
-            href="/dashboard"
+            href="/discover"
             className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800"
           >
-            Go to my plan
+            Go to Discover
           </Link>
         </div>
       ) : (
