@@ -18,19 +18,18 @@ export type GeminiError =
   | "busy" // every model overloaded (503)
   | "blocked" // safety filters stopped the answer
   | "rejected" // Gemini said our request was invalid (400)
-  | "bad_output" // answer wasn't the JSON we asked for
+  | "bad_output" // answer was empty or not the JSON we asked for
   | "unavailable"; // network problem
 
-export type GeminiResult = { ok: true; json: unknown; model: string } | { ok: false; error: GeminiError };
-
-interface JsonRequest {
-  systemInstruction: string;
-  prompt: string;
-  jsonSchema: object;
+export interface ChatTurn {
+  role: "user" | "model";
+  text: string;
 }
 
-// Asks Gemini for JSON matching `jsonSchema`. The caller must still validate the result (e.g. with zod).
-export async function generateJson({ systemInstruction, prompt, jsonSchema }: JsonRequest): Promise<GeminiResult> {
+type TextResult = { ok: true; text: string; model: string } | { ok: false; error: GeminiError };
+
+// One generateContent call with model fallback. Returns the answer's text.
+async function callGemini(systemInstruction: string, turns: ChatTurn[], generationConfig: object): Promise<TextResult> {
   const apiKey = process.env.GEMINI_API_KEY?.trim().replace(/^["']|["']$/g, "");
   if (!apiKey) return { ok: false, error: "not_configured" };
 
@@ -43,8 +42,8 @@ export async function generateJson({ systemInstruction, prompt, jsonSchema }: Js
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemInstruction }] },
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json", responseJsonSchema: jsonSchema },
+          contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
+          generationConfig,
         }),
         cache: "no-store",
         signal: AbortSignal.timeout(90_000),
@@ -73,19 +72,47 @@ export async function generateJson({ systemInstruction, prompt, jsonSchema }: Js
     }
 
     const body = (await response.json().catch(() => null)) as {
-      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+      candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[];
       promptFeedback?: { blockReason?: string };
     } | null;
     if (!body) return { ok: false, error: "bad_output" };
     if (body.promptFeedback?.blockReason || body.candidates?.[0]?.finishReason === "SAFETY") {
       return { ok: false, error: "blocked" };
     }
-    const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-    try {
-      return { ok: true, json: JSON.parse(text), model };
-    } catch {
-      return { ok: false, error: "bad_output" };
-    }
+    const text = (body.candidates?.[0]?.content?.parts ?? [])
+      .filter((p) => !p.thought)
+      .map((p) => p.text ?? "")
+      .join("")
+      .trim();
+    if (!text) return { ok: false, error: "bad_output" };
+    return { ok: true, text, model };
   }
   return { ok: false, error: lastError };
+}
+
+export type GeminiResult = { ok: true; json: unknown; model: string } | { ok: false; error: GeminiError };
+
+interface JsonRequest {
+  systemInstruction: string;
+  prompt: string;
+  jsonSchema: object;
+}
+
+// Asks Gemini for JSON matching `jsonSchema`. The caller must still validate the result (e.g. with zod).
+export async function generateJson({ systemInstruction, prompt, jsonSchema }: JsonRequest): Promise<GeminiResult> {
+  const result = await callGemini(systemInstruction, [{ role: "user", text: prompt }], {
+    responseMimeType: "application/json",
+    responseJsonSchema: jsonSchema,
+  });
+  if (!result.ok) return result;
+  try {
+    return { ok: true, json: JSON.parse(result.text), model: result.model };
+  } catch {
+    return { ok: false, error: "bad_output" };
+  }
+}
+
+// A plain-text chat reply given the conversation so far (last turn must be the user's).
+export async function generateChatReply(systemInstruction: string, turns: ChatTurn[]): Promise<TextResult> {
+  return callGemini(systemInstruction, turns, { temperature: 0.6 });
 }
