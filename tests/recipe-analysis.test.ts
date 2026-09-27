@@ -147,5 +147,6 @@ describe("looksCooked", () => {
     expect(looksCooked("basmati rice", "grains", 356)).toBe(false);
     expect(looksCooked("onion", "produce", 38)).toBe(false);
     expect(looksCooked("water", "other", 0)).toBe(false);
+    expect(looksCooked("moong sprouts", "produce", 30)).toBe(false);
   });
 });

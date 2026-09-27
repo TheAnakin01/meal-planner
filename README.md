@@ -65,6 +65,10 @@ Run the files in `supabase/migrations/` **in order** (0001 → latest) in the Su
 enable the `pg_cron` and `pg_net` extensions and run the scheduler SQL kept locally in `supabase/local/`
 (git-ignored because it contains a secret).
 
+**Starter recipes (optional, recommended):** run `supabase/seed/starter-library.sql` once in the SQL Editor. It adds
+64 ingredients (USDA nutrition) and 79 Indian recipes as drafts. Then open **Admin → Recipes → Publish ready drafts**.
+To change the starter data, edit `supabase/seed/starter-library.ts` and run `npm run seed:build`.
+
 ## Security
 
 Every table uses Row Level Security, so people only ever see their own data (and their household's shared list).

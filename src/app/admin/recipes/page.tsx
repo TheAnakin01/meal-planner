@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PublishDraftsButton from "@/components/admin/PublishDraftsButton";
 import { isCurrentUserAdmin } from "@/lib/admin-server";
 import { dietLabel } from "@/lib/diet";
 import { getAllRecipes } from "@/lib/library-server";
+
+// Publishing many drafts at once recalculates each one.
+export const maxDuration = 60;
 
 export const metadata: Metadata = {
   title: "Recipes · Admin · Meal Planner",
@@ -12,6 +16,7 @@ export const metadata: Metadata = {
 export default async function AdminRecipesPage() {
   if (!(await isCurrentUserAdmin())) notFound();
   const recipes = await getAllRecipes();
+  const draftCount = recipes.filter((r) => r.status === "draft").length;
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 sm:py-12">
@@ -37,6 +42,8 @@ export default async function AdminRecipesPage() {
           </div>
         </div>
       </div>
+
+      {draftCount > 0 && <PublishDraftsButton draftCount={draftCount} />}
 
       {recipes.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center dark:border-zinc-700">

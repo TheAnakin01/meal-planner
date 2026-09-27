@@ -155,6 +155,8 @@ const DRY_STAPLE_WORDS = [
   "jowar", "bajra", "dalia", "pasta", "noodle", "vermicelli", "sabudana",
 ];
 export function looksCooked(name: string, aisle: string, kcalPer100g: number): boolean {
+  // Sprouted pulses are fresh produce and genuinely light (moong sprouts ≈ 30 kcal/100 g).
+  if (findWordHit({ title: name, ingredients: [] }, ["sprout", "sprouted"]) !== null) return false;
   const dryAisle = aisle === "grains" || aisle === "pulses";
   const dryName = findWordHit({ title: name, ingredients: [] }, DRY_STAPLE_WORDS) !== null;
   return (dryAisle || dryName) && kcalPer100g > 0 && kcalPer100g < 250;

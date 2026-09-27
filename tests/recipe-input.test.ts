@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type RecipeLine, analyzeRecipe, kcalMismatch } from "@/lib/recipe-analysis";
-import { type RecipeInput, publishProblems, recipeInputSchema, toSaveRecipeArgs } from "@/lib/recipe-input";
+import { type RecipeInput, bulkPublishBlockers, publishProblems, recipeInputSchema, toSaveRecipeArgs } from "@/lib/recipe-input";
 
 const input: RecipeInput = {
   id: null,
@@ -108,5 +108,18 @@ describe("kcalMismatch", () => {
 
   it("ignores near-zero foods like spices and water", () => {
     expect(kcalMismatch({ kcal: 5, proteinG: 0.5, carbsG: 1, fatG: 0.1, fiberG: 0 })).toBeNull();
+  });
+});
+
+describe("bulkPublishBlockers", () => {
+  it("is empty for a complete recipe with consistent tags", () => {
+    expect(bulkPublishBlockers(input, analyzeRecipe(input.title, 2, lines))).toEqual([]);
+  });
+
+  it("also blocks recipes whose tags disagree with the word check", () => {
+    const untaggedButter = { ...paneer, name: "butter", allergenTags: [], containsDairy: false };
+    const analysis = analyzeRecipe("Butter Toast", 1, [{ grams: 10, ingredient: untaggedButter }]);
+    const blockers = bulkPublishBlockers({ steps: ["Spread"], lines: [1] }, analysis);
+    expect(blockers.some((b) => b.includes("dairy"))).toBe(true);
   });
 });

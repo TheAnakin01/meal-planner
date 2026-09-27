@@ -321,11 +321,11 @@ Each step ends with a commit + push. Tick boxes as you go.
       Done 2026-09-27: axe-core (WCAG 2 A/AA + best practice) reports 0 issues on all pages in light and dark mode;
       colours meet 4.5:1 (use emerald-700 for white-text buttons, zinc-600/zinc-400 for secondary text);
       error.tsx, not-found.tsx, loading.tsx added; recipe cards go side-by-side from 640px.
-- [ ] **Step 13 — Launch check:** add Vercel URL to Supabase redirect URLs, test sign-up → profile → plan on a phone,
+- [x] **Step 13 — Launch check:** add Vercel URL to Supabase redirect URLs, test sign-up → profile → plan on a phone,
       confirm no service is on a paid plan.
       Automated checks passed 2026-09-27: live pages/redirects/404/footer backlink OK; `.env.local` never committed and
       no keys in git history; Spoonacular key absent from browser bundles; strangers read `[]` and writes are refused
-      by RLS; `npm audit --omit=dev` 0 vulnerabilities. **Remaining (owner):** phone walkthrough + confirm free plans.
+      by RLS; `npm audit --omit=dev` 0 vulnerabilities. Owner confirmed phone walkthrough + free plans 2026-09-27.
 
 ## 10. Known limits & maintenance (free plans)
 
@@ -345,6 +345,7 @@ npm run dev        # run locally at http://localhost:3000
 npm run build      # production build check (run before pushing)
 npm run lint       # code style checks
 npm test           # unit tests (Vitest)
+npm run seed:build # regenerate supabase/seed/starter-library.sql after editing the starter library
 git add -A && git commit -m "message" && git push   # save + deploy
 ```
 
@@ -542,7 +543,14 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       have nutrition (DB constraint). Editing an ingredient recalculates every recipe using it. Importer warns when
       kcal is >7% off the macro estimate (fibre counted at 2 kcal/g).
 - [x] **Step 18 — AI recipe drafting (admin only):** Gemini free key, structured JSON drafts → review → publish;
-      seed ~80 recipes. (Tool built; seeding ~80 recipes is ongoing owner work.)
+      seed ~80 recipes. (Tool built.)
+      Starter library (2026-09-27): `supabase/seed/starter-library.ts` holds 64 new USDA-backed ingredients + 79 recipes
+      (28 breakfast, 51 lunch/dinner; every diet type has 7+ per meal, Jain/vegan included). `npm run seed:build` writes
+      `supabase/seed/starter-library.sql`, run once in the SQL Editor: adds missing ingredients (never overwrites) and the
+      recipes as DRAFTS (source ai). Admin → Recipes → **Publish ready drafts** recomputes each with our engine and
+      publishes only drafts with nutrition and no allergen/diet warnings. `tests/starter-library.test.ts` checks every
+      recipe through the real engine and that the planner fills a full week (no gaps) for each diet + common allergies.
+      Many Indian breads contain milk solids/soya, so bread is tagged dairy + soy. No USDA entry for poha (pack values).
       Findings 2026-09-27: models tried in order `GEMINI_MODELS` in `src/lib/gemini-server.ts` (3.8 Flash often 503
       "high demand" on free tier → fall back to 3.5 Flash; 2.5 Flash retired); ~20–25 s per draft, so the draft page sets
       `maxDuration = 120`. Structured output via `generationConfig.responseJsonSchema`. Drafts are matched to library
@@ -629,7 +637,7 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       `household_invites` (8-char code, 7 days), `household_list_items` (shared ticks/extras, in the Realtime publication),
       `my_household_id()`, `create_household()`, `join_household()`, `household_week_slots()` (recipe ids + portions only).
       `/household` page; `/shopping?list=household` tab with live refresh.
-- [ ] **Step 33 — v2 launch check:** full phone walkthrough online + offline, a11y audit, security/RLS review,
+- [x] **Step 33 — v2 launch check:** full phone walkthrough online + offline, a11y audit, security/RLS review,
       confirm every service still on a free plan.
       Automated checks passed 2026-09-27: migrations through 0013 live; stranger probe of all 19 tables + 9 functions —
       private tables read `[]`, every write refused (401), user-only functions refuse strangers, `claim_due_reminders`
@@ -637,7 +645,8 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       protected pages redirect to login; 0 vulnerabilities; no secrets in git history; axe 0 violations on public pages
       (signed-in pages audited in their own steps); 277 tests, lint, types and build pass. Added security headers
       (nosniff, no framing, referrer policy, permissions policy with camera kept for the scanner).
-      **Remaining (owner):** phone walkthrough online + offline, and confirm the free plans (checklist in chat).
+      Owner confirmed 2026-09-27: phone walkthrough online + offline OK; Vercel Hobby, Supabase Free, Spoonacular Free,
+      Gemini free tier (no billing), GitHub Free, USDA key — all free.
 
 ## 23. v2 free-plan limits to design around
 

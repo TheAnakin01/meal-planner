@@ -87,3 +87,13 @@ export function publishProblems(
   }
   return problems;
 }
+
+// Why a draft can't be published by "Publish ready drafts" (empty list = ready). Stricter than the
+// editor: any allergen/diet warning (tags disagreeing with the word check) also blocks it, so the owner
+// looks at that recipe in the editor instead of it going live unseen.
+export function bulkPublishBlockers(
+  input: { steps: readonly unknown[]; lines: readonly unknown[] },
+  analysis: RecipeAnalysis,
+): string[] {
+  return [...publishProblems(input, analysis), ...analysis.allergens.warnings, ...analysis.diets.warnings];
+}

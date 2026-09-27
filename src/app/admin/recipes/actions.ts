@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { isCurrentUserAdmin } from "@/lib/admin-server";
-import { getRecipeInput, saveRecipe } from "@/lib/library-server";
+import { type BulkPublishResult, getRecipeInput, publishReadyDrafts, saveRecipe } from "@/lib/library-server";
 import { publishProblems, recipeInputSchema } from "@/lib/recipe-input";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,4 +67,16 @@ export async function deleteRecipeAction(id: number): Promise<Result<object>> {
   }
   revalidateLibrary();
   return { ok: true };
+}
+
+export async function publishReadyDraftsAction(): Promise<Result<BulkPublishResult>> {
+  if (!(await isCurrentUserAdmin())) return { ok: false, error: "Only admins can do this." };
+  try {
+    const result = await publishReadyDrafts();
+    revalidateLibrary();
+    return { ok: true, ...result };
+  } catch (e) {
+    console.error("publishReadyDraftsAction failed:", e instanceof Error ? e.message : e);
+    return { ok: false, error: "Couldn't publish the drafts. Please try again." };
+  }
 }

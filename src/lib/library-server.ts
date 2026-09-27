@@ -10,7 +10,7 @@ import {
   recipeFromRow,
 } from "@/lib/library";
 import { type RecipeLine, analyzeRecipe } from "@/lib/recipe-analysis";
-import { type RecipeInput, toSaveRecipeArgs } from "@/lib/recipe-input";
+import { type RecipeInput, bulkPublishBlockers, toSaveRecipeArgs } from "@/lib/recipe-input";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getAllIngredients(): Promise<Ingredient[]> {
@@ -104,6 +104,87 @@ export async function saveRecipe(input: RecipeInput, source: "owner" | "ai" = "o
     return { error: "Couldn't save the recipe. Please try again." } as const;
   }
   return { id: Number(data), analysis } as const;
+}
+
+export interface BulkPublishResult {
+  published: number;
+  skipped: { id: number; title: string; reasons: string[] }[];
+}
+
+// "Publish ready drafts": recomputes every draft from the database ingredients (same engine as the
+// editor) and publishes the ones with no blockers, storing fresh nutrition/allergens/diets. Drafts with
+// any problem or tag warning stay drafts and are listed so the owner can fix them in the editor.
+export async function publishReadyDrafts(): Promise<BulkPublishResult> {
+  const supabase = await createClient();
+  const [ingredients, recipes] = await Promise.all([getAllIngredients(), getAllRecipes()]);
+  const drafts = recipes.filter((r) => r.status === "draft");
+  if (drafts.length === 0) return { published: 0, skipped: [] };
+
+  const { data: rows, error } = await supabase
+    .from("recipe_ingredients")
+    .select("recipe_id, ingredient_id, position, grams, display_amount, note")
+    .in("recipe_id", drafts.map((d) => d.id))
+    .order("position")
+    .returns<(RecipeIngredientRow & { recipe_id: number })[]>();
+  if (error) throw new Error(`Could not load recipe ingredients: ${error.message}`);
+
+  const linesByRecipe = new Map<number, RecipeInput["lines"]>();
+  for (const row of rows ?? []) {
+    const id = Number(row.recipe_id);
+    const list = linesByRecipe.get(id) ?? [];
+    list.push({ ingredientId: Number(row.ingredient_id), grams: Number(row.grams), displayAmount: row.display_amount, note: row.note });
+    linesByRecipe.set(id, list);
+  }
+
+  const skipped: BulkPublishResult["skipped"] = [];
+  const ready: { id: number; update: Record<string, unknown> }[] = [];
+  for (const draft of drafts) {
+    const inputLines = linesByRecipe.get(draft.id) ?? [];
+    const lines = toRecipeLines({ lines: inputLines }, ingredients);
+    if (!lines) {
+      skipped.push({ id: draft.id, title: draft.title, reasons: ["One of its ingredients no longer exists."] });
+      continue;
+    }
+    const analysis = analyzeRecipe(draft.title, draft.servings, lines);
+    const reasons = bulkPublishBlockers({ steps: draft.steps, lines: inputLines }, analysis);
+    const n = analysis.nutrition.perServing;
+    if (reasons.length > 0 || !n) {
+      skipped.push({ id: draft.id, title: draft.title, reasons });
+      continue;
+    }
+    ready.push({
+      id: draft.id,
+      update: {
+        kcal_per_serving: n.kcal,
+        protein_per_serving: n.proteinG,
+        carbs_per_serving: n.carbsG,
+        fat_per_serving: n.fatG,
+        fiber_per_serving: n.fiberG,
+        allergen_tags: analysis.allergens.tags,
+        diet_types: analysis.diets.dietTypes,
+        status: "published",
+        published_at: new Date().toISOString(),
+      },
+    });
+  }
+
+  // A few updates at a time: quick, without flooding the free database.
+  let published = 0;
+  for (let i = 0; i < ready.length; i += 8) {
+    const results = await Promise.all(
+      ready.slice(i, i + 8).map(({ id, update }) =>
+        supabase.from("recipes").update(update).eq("id", id).eq("status", "draft"),
+      ),
+    );
+    results.forEach((r, j) => {
+      if (r.error) {
+        console.error("publishReadyDrafts update failed:", r.error.message);
+        const { id } = ready[i + j];
+        skipped.push({ id, title: drafts.find((d) => d.id === id)!.title, reasons: ["Couldn't save. Please try again."] });
+      } else published++;
+    });
+  }
+  return { published, skipped };
 }
 
 // After an ingredient changes, re-save every recipe that uses it so stored nutrition stays correct.
