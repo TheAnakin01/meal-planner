@@ -3,7 +3,7 @@
 // Pages that require the user to be signed in.
 export const PROTECTED_PATHS = ["/profile", "/dashboard"];
 
-export const DEFAULT_AFTER_LOGIN = "/profile";
+export const DEFAULT_AFTER_LOGIN = "/dashboard";
 
 export function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

@@ -24,6 +24,12 @@ export default async function SiteHeader() {
 
         {email ? (
           <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950"
+            >
+              My plan
+            </Link>
             <span className="hidden truncate text-sm text-zinc-600 sm:inline dark:text-zinc-400">
               {email}
             </span>

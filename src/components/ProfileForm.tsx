@@ -1,14 +1,9 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useRef, useState } from "react";
-import MacroSummary from "@/components/MacroSummary";
-import { ALLERGENS, type AllergenId, allergenLabel, parseOtherAllergies } from "@/lib/allergens";
-import {
-  type NutritionPlan,
-  calculateNutritionPlan,
-  feetInchesToCm,
-  poundsToKg,
-} from "@/lib/nutrition";
+import { type FormEvent, type ReactNode, useState, useTransition } from "react";
+import { saveProfile } from "@/app/profile/actions";
+import { ALLERGENS, type AllergenId, parseOtherAllergies } from "@/lib/allergens";
+import { feetInchesToCm, poundsToKg } from "@/lib/nutrition";
 import { type ProfileField, type ProfileInput, profileSchema } from "@/lib/validation";
 
 type Units = "metric" | "imperial";
@@ -42,23 +37,35 @@ const inputClass =
 // Empty input -> NaN so zod reports "Please enter ...".
 const toNumber = (value: string) => (value.trim() === "" ? NaN : Number(value));
 
-export default function ProfileForm() {
+// Prefill imperial fields from saved metric values, in case the user switches units.
+function toImperial(initial?: ProfileInput) {
+  if (!initial) return { lb: "", ft: "", in: "" };
+  const totalInches = Math.round(initial.heightCm / 2.54);
+  return {
+    lb: String(Math.round(initial.weightKg / 0.45359237)),
+    ft: String(Math.floor(totalInches / 12)),
+    in: String(totalInches % 12),
+  };
+}
+
+export default function ProfileForm({ initial }: { initial?: ProfileInput }) {
+  const imperial = toImperial(initial);
   const [units, setUnits] = useState<Units>("metric");
-  const [age, setAge] = useState("");
-  const [weightKg, setWeightKg] = useState("");
-  const [heightCm, setHeightCm] = useState("");
-  const [weightLb, setWeightLb] = useState("");
-  const [heightFt, setHeightFt] = useState("");
-  const [heightIn, setHeightIn] = useState("");
-  const [gender, setGender] = useState("");
-  const [activityLevel, setActivityLevel] = useState("");
-  const [goal, setGoal] = useState("");
-  const [allergies, setAllergies] = useState<AllergenId[]>([]);
-  const [otherAllergies, setOtherAllergies] = useState("");
+  const [age, setAge] = useState(initial ? String(initial.age) : "");
+  const [weightKg, setWeightKg] = useState(initial ? String(initial.weightKg) : "");
+  const [heightCm, setHeightCm] = useState(initial ? String(initial.heightCm) : "");
+  const [weightLb, setWeightLb] = useState(imperial.lb);
+  const [heightFt, setHeightFt] = useState(imperial.ft);
+  const [heightIn, setHeightIn] = useState(imperial.in);
+  const [gender, setGender] = useState<string>(initial?.gender ?? "");
+  const [activityLevel, setActivityLevel] = useState<string>(initial?.activityLevel ?? "");
+  const [goal, setGoal] = useState<string>(initial?.goal ?? "");
+  const [allergies, setAllergies] = useState<AllergenId[]>(initial?.allergies ?? []);
+  const [otherAllergies, setOtherAllergies] = useState(initial?.otherAllergies.join(", ") ?? "");
 
   const [errors, setErrors] = useState<Errors>({});
-  const [result, setResult] = useState<{ plan: NutritionPlan; profile: ProfileInput } | null>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
+  const [saveError, setSaveError] = useState("");
+  const [saving, startSaving] = useTransition();
 
   function toggleAllergy(id: AllergenId) {
     setAllergies((current) =>
@@ -94,17 +101,18 @@ export default function ProfileForm() {
         next[field] ??= issue.message;
       }
       setErrors(next);
-      setResult(null);
       const firstField = Object.keys(next)[0];
       document.querySelector<HTMLElement>(`[data-field="${firstField}"]`)?.focus();
       return;
     }
 
     setErrors({});
-    setResult({ plan: calculateNutritionPlan(parsed.data), profile: parsed.data });
-    requestAnimationFrame(() =>
-      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-    );
+    setSaveError("");
+    startSaving(async () => {
+      // On success the server redirects to /dashboard, so we only get here on failure.
+      const result = await saveProfile(parsed.data);
+      if (result?.error) setSaveError(result.error);
+    });
   }
 
   const unitButton = (value: Units, label: string) => (
@@ -123,215 +131,208 @@ export default function ProfileForm() {
   );
 
   return (
-    <div className="space-y-10">
-      <form onSubmit={handleSubmit} noValidate className="space-y-8">
-        <div className="flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="group" aria-label="Units">
-          {unitButton("metric", "Metric (kg, cm)")}
-          {unitButton("imperial", "Imperial (lb, ft)")}
-        </div>
+    <form onSubmit={handleSubmit} noValidate className="space-y-8">
+      <div className="flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="group" aria-label="Units">
+        {unitButton("metric", "Metric (kg, cm)")}
+        {unitButton("imperial", "Imperial (lb, ft)")}
+      </div>
 
-        <div className="grid gap-5 sm:grid-cols-3">
-          <Field id="age" label="Age" error={errors.age}>
-            <input
-              id="age"
-              data-field="age"
-              type="number"
-              inputMode="numeric"
-              min={16}
-              max={100}
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              aria-invalid={!!errors.age}
-              aria-describedby={errors.age ? "age-error" : undefined}
-              className={inputClass}
-            />
-          </Field>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <Field id="age" label="Age" error={errors.age}>
+          <input
+            id="age"
+            data-field="age"
+            type="number"
+            inputMode="numeric"
+            min={16}
+            max={100}
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+            aria-invalid={!!errors.age}
+            aria-describedby={errors.age ? "age-error" : undefined}
+            className={inputClass}
+          />
+        </Field>
 
-          {units === "metric" ? (
-            <>
-              <Field id="weightKg" label="Weight (kg)" error={errors.weightKg}>
-                <input
-                  id="weightKg"
-                  data-field="weightKg"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.1"
-                  value={weightKg}
-                  onChange={(e) => setWeightKg(e.target.value)}
-                  aria-invalid={!!errors.weightKg}
-                  aria-describedby={errors.weightKg ? "weightKg-error" : undefined}
-                  className={inputClass}
-                />
-              </Field>
-              <Field id="heightCm" label="Height (cm)" error={errors.heightCm}>
-                <input
-                  id="heightCm"
-                  data-field="heightCm"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.1"
-                  value={heightCm}
-                  onChange={(e) => setHeightCm(e.target.value)}
-                  aria-invalid={!!errors.heightCm}
-                  aria-describedby={errors.heightCm ? "heightCm-error" : undefined}
-                  className={inputClass}
-                />
-              </Field>
-            </>
-          ) : (
-            <>
-              <Field id="weightKg" label="Weight (lb)" error={errors.weightKg}>
-                <input
-                  id="weightKg"
-                  data-field="weightKg"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.1"
-                  value={weightLb}
-                  onChange={(e) => setWeightLb(e.target.value)}
-                  aria-invalid={!!errors.weightKg}
-                  aria-describedby={errors.weightKg ? "weightKg-error" : undefined}
-                  className={inputClass}
-                />
-              </Field>
-              <Field id="heightCm" label="Height" error={errors.heightCm} asGroup>
-                <div className="mt-1 flex gap-2">
-                  <label className="flex-1">
-                    <span className="sr-only">Feet</span>
-                    <div className="relative">
-                      <input
-                        id="heightCm"
-                        data-field="heightCm"
-                        type="number"
-                        inputMode="numeric"
-                        value={heightFt}
-                        onChange={(e) => setHeightFt(e.target.value)}
-                        aria-label="Height, feet"
-                        aria-invalid={!!errors.heightCm}
-                        aria-describedby={errors.heightCm ? "heightCm-error" : undefined}
-                        className={`${inputClass} mt-0 pr-9`}
-                      />
-                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">ft</span>
-                    </div>
-                  </label>
-                  <label className="flex-1">
-                    <span className="sr-only">Inches</span>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        value={heightIn}
-                        onChange={(e) => setHeightIn(e.target.value)}
-                        aria-label="Height, inches"
-                        aria-invalid={!!errors.heightCm}
-                        className={`${inputClass} mt-0 pr-9`}
-                      />
-                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">in</span>
-                    </div>
-                  </label>
-                </div>
-              </Field>
-            </>
-          )}
-        </div>
-
-        <ChoiceGroup
-          name="gender"
-          legend="Gender"
-          options={GENDERS}
-          value={gender}
-          onChange={setGender}
-          error={errors.gender}
-          columns="sm:grid-cols-3"
-        />
-
-        <ChoiceGroup
-          name="activityLevel"
-          legend="Activity level"
-          options={ACTIVITY_LEVELS}
-          value={activityLevel}
-          onChange={setActivityLevel}
-          error={errors.activityLevel}
-        />
-
-        <ChoiceGroup
-          name="goal"
-          legend="Goal"
-          options={GOALS}
-          value={goal}
-          onChange={setGoal}
-          error={errors.goal}
-          columns="grid-cols-3"
-        />
-
-        <fieldset>
-          <legend className="font-semibold">Allergies</legend>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Tick everything you must avoid. Recipes containing these will never be shown.
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {ALLERGENS.map((a) => (
-              <label
-                key={a.id}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-3 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 dark:border-zinc-800 dark:has-[:checked]:bg-emerald-950"
-              >
-                <input
-                  type="checkbox"
-                  checked={allergies.includes(a.id)}
-                  onChange={() => toggleAllergy(a.id)}
-                  className="h-5 w-5 accent-emerald-600"
-                />
-                <span className="text-sm">{a.label}</span>
-              </label>
-            ))}
-          </div>
-
-          <div className="mt-4">
-            <Field id="otherAllergies" label="Other allergies (optional)" error={errors.otherAllergies}>
+        {units === "metric" ? (
+          <>
+            <Field id="weightKg" label="Weight (kg)" error={errors.weightKg}>
               <input
-                id="otherAllergies"
-                data-field="otherAllergies"
-                type="text"
-                placeholder="e.g. kiwi, strawberry"
-                value={otherAllergies}
-                onChange={(e) => setOtherAllergies(e.target.value)}
-                aria-invalid={!!errors.otherAllergies}
-                aria-describedby={errors.otherAllergies ? "otherAllergies-error" : "otherAllergies-hint"}
+                id="weightKg"
+                data-field="weightKg"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+                aria-invalid={!!errors.weightKg}
+                aria-describedby={errors.weightKg ? "weightKg-error" : undefined}
                 className={inputClass}
               />
-              <p id="otherAllergies-hint" className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                Separate with commas.
-              </p>
             </Field>
-          </div>
-        </fieldset>
-
-        {Object.keys(errors).length > 0 && (
-          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-            Please fix the highlighted fields above.
-          </p>
+            <Field id="heightCm" label="Height (cm)" error={errors.heightCm}>
+              <input
+                id="heightCm"
+                data-field="heightCm"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={heightCm}
+                onChange={(e) => setHeightCm(e.target.value)}
+                aria-invalid={!!errors.heightCm}
+                aria-describedby={errors.heightCm ? "heightCm-error" : undefined}
+                className={inputClass}
+              />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field id="weightKg" label="Weight (lb)" error={errors.weightKg}>
+              <input
+                id="weightKg"
+                data-field="weightKg"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={weightLb}
+                onChange={(e) => setWeightLb(e.target.value)}
+                aria-invalid={!!errors.weightKg}
+                aria-describedby={errors.weightKg ? "weightKg-error" : undefined}
+                className={inputClass}
+              />
+            </Field>
+            <Field id="heightCm" label="Height" error={errors.heightCm} asGroup>
+              <div className="mt-1 flex gap-2">
+                <label className="flex-1">
+                  <span className="sr-only">Feet</span>
+                  <div className="relative">
+                    <input
+                      id="heightCm"
+                      data-field="heightCm"
+                      type="number"
+                      inputMode="numeric"
+                      value={heightFt}
+                      onChange={(e) => setHeightFt(e.target.value)}
+                      aria-label="Height, feet"
+                      aria-invalid={!!errors.heightCm}
+                      aria-describedby={errors.heightCm ? "heightCm-error" : undefined}
+                      className={`${inputClass} mt-0 pr-9`}
+                    />
+                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">ft</span>
+                  </div>
+                </label>
+                <label className="flex-1">
+                  <span className="sr-only">Inches</span>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={heightIn}
+                      onChange={(e) => setHeightIn(e.target.value)}
+                      aria-label="Height, inches"
+                      aria-invalid={!!errors.heightCm}
+                      className={`${inputClass} mt-0 pr-9`}
+                    />
+                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">in</span>
+                  </div>
+                </label>
+              </div>
+            </Field>
+          </>
         )}
+      </div>
 
-        <button
-          type="submit"
-          className="w-full rounded-xl bg-emerald-600 px-6 py-4 text-lg font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 sm:w-auto"
-        >
-          {result ? "Recalculate my plan" : "Calculate my plan"}
-        </button>
-      </form>
+      <ChoiceGroup
+        name="gender"
+        legend="Gender"
+        options={GENDERS}
+        value={gender}
+        onChange={setGender}
+        error={errors.gender}
+        columns="sm:grid-cols-3"
+      />
 
-      {result && (
-        <div ref={resultRef} className="scroll-mt-4">
-          <MacroSummary
-            plan={result.plan}
-            excluding={[
-              ...result.profile.allergies.map(allergenLabel),
-              ...result.profile.otherAllergies,
-            ]}
-          />
+      <ChoiceGroup
+        name="activityLevel"
+        legend="Activity level"
+        options={ACTIVITY_LEVELS}
+        value={activityLevel}
+        onChange={setActivityLevel}
+        error={errors.activityLevel}
+      />
+
+      <ChoiceGroup
+        name="goal"
+        legend="Goal"
+        options={GOALS}
+        value={goal}
+        onChange={setGoal}
+        error={errors.goal}
+        columns="grid-cols-3"
+      />
+
+      <fieldset>
+        <legend className="font-semibold">Allergies</legend>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Tick everything you must avoid. Recipes containing these will never be shown.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {ALLERGENS.map((a) => (
+            <label
+              key={a.id}
+              className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-3 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 dark:border-zinc-800 dark:has-[:checked]:bg-emerald-950"
+            >
+              <input
+                type="checkbox"
+                checked={allergies.includes(a.id)}
+                onChange={() => toggleAllergy(a.id)}
+                className="h-5 w-5 accent-emerald-600"
+              />
+              <span className="text-sm">{a.label}</span>
+            </label>
+          ))}
         </div>
+
+        <div className="mt-4">
+          <Field id="otherAllergies" label="Other allergies (optional)" error={errors.otherAllergies}>
+            <input
+              id="otherAllergies"
+              data-field="otherAllergies"
+              type="text"
+              placeholder="e.g. kiwi, strawberry"
+              value={otherAllergies}
+              onChange={(e) => setOtherAllergies(e.target.value)}
+              aria-invalid={!!errors.otherAllergies}
+              aria-describedby={errors.otherAllergies ? "otherAllergies-error" : "otherAllergies-hint"}
+              className={inputClass}
+            />
+            <p id="otherAllergies-hint" className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Separate with commas.
+            </p>
+          </Field>
+        </div>
+      </fieldset>
+
+      {Object.keys(errors).length > 0 && (
+        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          Please fix the highlighted fields above.
+        </p>
       )}
-    </div>
+
+      {saveError && (
+        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          {saveError}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={saving}
+        className="w-full rounded-xl bg-emerald-600 px-6 py-4 text-lg font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 disabled:opacity-60 sm:w-auto"
+      >
+        {saving ? "Saving…" : "Save and see my plan"}
+      </button>
+    </form>
   );
 }
 

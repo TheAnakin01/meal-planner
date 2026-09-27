@@ -7,12 +7,12 @@ describe("safeNextPath", () => {
     expect(safeNextPath("/profile?tab=allergies")).toBe("/profile?tab=allergies");
   });
 
-  it("falls back to /profile for missing or external targets", () => {
-    expect(safeNextPath(null)).toBe("/profile");
-    expect(safeNextPath("")).toBe("/profile");
-    expect(safeNextPath("https://evil.example")).toBe("/profile");
-    expect(safeNextPath("//evil.example")).toBe("/profile");
-    expect(safeNextPath("/\\evil.example")).toBe("/profile");
+  it("falls back to /dashboard for missing or external targets", () => {
+    expect(safeNextPath(null)).toBe("/dashboard");
+    expect(safeNextPath("")).toBe("/dashboard");
+    expect(safeNextPath("https://evil.example")).toBe("/dashboard");
+    expect(safeNextPath("//evil.example")).toBe("/dashboard");
+    expect(safeNextPath("/\\evil.example")).toBe("/dashboard");
   });
 });
 

@@ -30,7 +30,7 @@ export default function Home() {
       </p>
 
       <Link
-        href="/profile"
+        href="/dashboard"
         className="mt-8 block w-full rounded-xl bg-emerald-600 px-6 py-4 text-center text-lg font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 sm:inline-block sm:w-auto"
       >
         Get started

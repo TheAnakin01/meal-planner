@@ -21,11 +21,7 @@ export default function MacroSummary({ plan, excluding }: MacroSummaryProps) {
   const macroKcal = macros.reduce((sum, m) => sum + m.kcal, 0);
 
   return (
-    <section aria-labelledby="plan-heading" className="space-y-4">
-      <h2 id="plan-heading" className="text-xl font-bold">
-        Your daily plan
-      </h2>
-
+    <section aria-label="Your daily plan" className="space-y-4">
       <div className="rounded-xl bg-emerald-600 p-5 text-white">
         <p className="text-sm font-medium opacity-90">Daily calorie target</p>
         <p className="mt-1 text-4xl font-bold">
