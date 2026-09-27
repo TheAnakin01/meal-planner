@@ -524,7 +524,7 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       Diet rules live in `src/lib/diet.ts` (reuse allergen rules + meat/Jain word lists + Spoonacular diet flags) and
       already filter the v1 Spoonacular dashboard. Store links in `src/lib/stores.ts`. Existing users with no diet
       type are sent to /profile to choose one (never assumed).
-- [ ] **Step 15 — Library schema:** `ingredients`, `recipes`, `recipe_ingredients` + admin RLS (migration 0004);
+- [x] **Step 15 — Library schema:** `ingredients`, `recipes`, `recipe_ingredients` + admin RLS (migration 0004);
       owner marks themselves admin.
 - [ ] **Step 16 — Nutrition engine:** USDA FDC client (server-only, free key), per-100 g import into `ingredients`,
       recipe nutrition calculator + allergen engine v2 + diet-type rules, with tests.
