@@ -6,6 +6,7 @@ export interface TickEntry {
   week: string; // YYYY-MM-DD (Monday)
   ingredientId: number;
   checked: boolean;
+  scope?: "me" | "household"; // which list (missing = "me", for entries saved before households existed)
 }
 
 export interface KeyValueStorage {
@@ -24,7 +25,8 @@ function isEntry(value: unknown): value is TickEntry {
     typeof v.week === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(v.week) &&
     Number.isInteger(v.ingredientId) &&
-    typeof v.checked === "boolean"
+    typeof v.checked === "boolean" &&
+    (v.scope === undefined || v.scope === "me" || v.scope === "household")
   );
 }
 
@@ -48,17 +50,25 @@ function writeOutbox(storage: KeyValueStorage | null, entries: TickEntry[]) {
   }
 }
 
+const sameItem = (a: TickEntry, b: TickEntry) =>
+  a.week === b.week && a.ingredientId === b.ingredientId && (a.scope ?? "me") === (b.scope ?? "me");
+
 // Adds a tick; a later tick for the same item replaces the earlier one.
 export function enqueueTick(storage: KeyValueStorage | null, entry: TickEntry) {
-  const others = readOutbox(storage).filter((e) => !(e.week === entry.week && e.ingredientId === entry.ingredientId));
+  const others = readOutbox(storage).filter((e) => !sameItem(e, entry));
   writeOutbox(storage, [...others, entry]);
 }
 
 // Ticked state for a week with queued (not yet sent) ticks applied on top of the server's.
-export function applyPending(serverChecked: readonly number[], pending: readonly TickEntry[], week: string): Set<number> {
+export function applyPending(
+  serverChecked: readonly number[],
+  pending: readonly TickEntry[],
+  week: string,
+  scope: "me" | "household" = "me",
+): Set<number> {
   const set = new Set(serverChecked);
   for (const e of pending) {
-    if (e.week !== week) continue;
+    if (e.week !== week || (e.scope ?? "me") !== scope) continue;
     if (e.checked) set.add(e.ingredientId);
     else set.delete(e.ingredientId);
   }
@@ -85,7 +95,7 @@ export async function flushOutbox(
   }
   // Keep anything queued while we were sending.
   const queuedMeanwhile = readOutbox(storage).filter(
-    (e) => !entries.some((x) => x.week === e.week && x.ingredientId === e.ingredientId && x.checked === e.checked),
+    (e) => !entries.some((x) => sameItem(x, e) && x.checked === e.checked),
   );
   writeOutbox(storage, [...failed, ...queuedMeanwhile]);
   return sent;

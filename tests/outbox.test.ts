@@ -70,3 +70,15 @@ describe("outbox", () => {
     expect(readOutbox(s)).toEqual([]);
   });
 });
+
+describe("outbox with two lists", () => {
+  it("keeps 'just me' and household ticks apart", () => {
+    const s = memoryStorage();
+    enqueueTick(s, { week: W, ingredientId: 1, checked: true });
+    enqueueTick(s, { week: W, ingredientId: 1, checked: false, scope: "household" });
+    expect(readOutbox(s)).toHaveLength(2);
+    const pending = readOutbox(s);
+    expect([...applyPending([], pending, W, "me")]).toEqual([1]);
+    expect([...applyPending([1], pending, W, "household")]).toEqual([]);
+  });
+});

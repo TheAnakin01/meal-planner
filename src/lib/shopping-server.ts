@@ -3,6 +3,7 @@
 import "server-only";
 import { getAllIngredients } from "@/lib/library-server";
 import { type WeekPlan, getOrCreateWeekPlan } from "@/lib/plan-server";
+import type { PlanSlot } from "@/lib/planner";
 import { type ShoppingList, type ShoppingRecipe, buildShoppingList } from "@/lib/shopping";
 import { createClient } from "@/lib/supabase/server";
 import type { ProfileInput } from "@/lib/validation";
@@ -33,10 +34,27 @@ interface ListRow {
   checked: boolean;
 }
 
-export async function getShoppingData(profile: ProfileInput): Promise<ShoppingData> {
+// "me": your own plan and ticks. "household": everyone's plans in your household added together, with
+// shared ticks and extra items (Step 32). Only recipe ids and portions come back for other members.
+export async function getShoppingData(profile: ProfileInput, scope: "me" | "household" = "me", householdId: number | null = null): Promise<ShoppingData> {
   const plan = await getOrCreateWeekPlan(profile);
   const supabase = await createClient();
-  const recipeIds = [...new Set(plan.slots.map((s) => s.recipeId))];
+  const shared = scope === "household" && householdId !== null;
+
+  let slots: PlanSlot[] = plan.slots;
+  if (shared) {
+    const { data, error } = await supabase.rpc("household_week_slots", { p_week: plan.weekStart });
+    if (error) throw new Error(`Could not load household list: ${error.message}`);
+    slots = ((data ?? []) as { recipe_id: number; portion: number | string }[]).map((r) => ({
+      day: 0,
+      meal: "lunch",
+      recipeId: Number(r.recipe_id),
+      portion: Number(r.portion),
+      locked: false,
+      isLeftover: false,
+    }));
+  }
+  const recipeIds = [...new Set(slots.map((s) => s.recipeId))];
 
   const [recipesRes, ingredients, pantryRes, listRes] = await Promise.all([
     recipeIds.length > 0
@@ -44,12 +62,20 @@ export async function getShoppingData(profile: ProfileInput): Promise<ShoppingDa
       : Promise.resolve({ data: [] as RecipeLinesRow[], error: null }),
     getAllIngredients(),
     supabase.from("pantry_items").select("ingredient_id").returns<{ ingredient_id: number }[]>(),
-    supabase
-      .from("shopping_list_items")
-      .select("id, ingredient_id, label, checked")
-      .eq("week_start", plan.weekStart)
-      .order("created_at")
-      .returns<ListRow[]>(),
+    shared
+      ? supabase
+          .from("household_list_items")
+          .select("id, ingredient_id, label, checked")
+          .eq("household_id", householdId)
+          .eq("week_start", plan.weekStart)
+          .order("created_at")
+          .returns<ListRow[]>()
+      : supabase
+          .from("shopping_list_items")
+          .select("id, ingredient_id, label, checked")
+          .eq("week_start", plan.weekStart)
+          .order("created_at")
+          .returns<ListRow[]>(),
   ]);
   for (const res of [recipesRes, pantryRes, listRes]) {
     if (res.error) throw new Error(`Could not load shopping list: ${res.error.message}`);
@@ -65,7 +91,7 @@ export async function getShoppingData(profile: ProfileInput): Promise<ShoppingDa
 
   return {
     plan,
-    list: buildShoppingList(plan.slots, recipes, ingredients, pantryIds),
+    list: buildShoppingList(slots, recipes, ingredients, pantryIds),
     checkedIds: rows.filter((r) => r.ingredient_id !== null && r.checked).map((r) => Number(r.ingredient_id)),
     custom: rows.filter((r) => r.label !== null).map((r) => ({ id: Number(r.id), label: r.label!, checked: r.checked })),
   };

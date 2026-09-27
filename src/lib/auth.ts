@@ -1,7 +1,7 @@
 // Shared auth helpers used by the proxy, login actions and callback route.
 
 // Pages that require the user to be signed in.
-export const PROTECTED_PATHS = ["/profile", "/dashboard", "/admin", "/week", "/recipes", "/shopping", "/discover", "/coach", "/diary", "/progress"];
+export const PROTECTED_PATHS = ["/profile", "/dashboard", "/admin", "/week", "/recipes", "/shopping", "/discover", "/coach", "/diary", "/progress", "/household"];
 
 export const DEFAULT_AFTER_LOGIN = "/dashboard";
 

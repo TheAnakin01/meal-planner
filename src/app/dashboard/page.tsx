@@ -78,6 +78,9 @@ export default async function DashboardPage() {
         <Link href="/coach" className={linkClass}>
           Ask your AI coach →
         </Link>
+        <Link href="/household" className={linkClass}>
+          Household →
+        </Link>
         <Link href="/discover" className={linkClass}>
           Discover more recipes →
         </Link>

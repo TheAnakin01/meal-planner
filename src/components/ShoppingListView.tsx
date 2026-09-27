@@ -11,6 +11,7 @@ import {
   setPreferredStoreAction,
 } from "@/app/shopping/actions";
 import { applyPending, browserStorage, enqueueTick, flushOutbox, readOutbox } from "@/lib/outbox";
+import { createClient } from "@/lib/supabase/client";
 import type { CustomItem } from "@/lib/shopping-server";
 import {
   type ShoppingItem,
@@ -29,13 +30,15 @@ interface Props {
   preferredStore: StoreId;
   shareTitle: string;
   week: string; // YYYY-MM-DD Monday, for ticks made offline
+  scope: "me" | "household";
+  householdId: number | null; // for live updates of the shared list
 }
 
 const linkButton = "text-xs font-semibold text-emerald-700 hover:underline disabled:opacity-50 dark:text-emerald-400";
 
 const OFFLINE_MESSAGE = "You're offline — this needs internet. Ticking items still works.";
 
-export default function ShoppingListView({ list, checkedIds, custom, preferredStore, shareTitle, week }: Props) {
+export default function ShoppingListView({ list, checkedIds, custom, preferredStore, shareTitle, week, scope, householdId }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -49,7 +52,7 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
   const flush = useCallback(async () => {
     const storage = browserStorage();
     if (readOutbox(storage).length === 0 || !navigator.onLine) return;
-    const sent = await flushOutbox(storage, async (e) => (await setCheckedAction(e.ingredientId, e.checked, e.week)).ok);
+    const sent = await flushOutbox(storage, async (e) => (await setCheckedAction(e.ingredientId, e.checked, e.week, e.scope ?? "me")).ok);
     setWaiting(readOutbox(storage).length);
     if (sent > 0) router.refresh();
   }, [router]);
@@ -58,12 +61,34 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
     // Show ticks made offline (saved on this phone) on top of the server's list, then try to send them.
     const pending = readOutbox(browserStorage());
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with phone storage after mount
-    setChecked(applyPending(checkedIds, pending, week));
+    setChecked(applyPending(checkedIds, pending, week, scope));
     setWaiting(pending.length);
     void flush();
     window.addEventListener("online", flush);
     return () => window.removeEventListener("online", flush);
-  }, [checkedIds, week, flush]);
+  }, [checkedIds, week, scope, flush]);
+
+  // Shared list: when anyone in the household ticks or adds something, reload (Supabase Realtime).
+  useEffect(() => {
+    if (scope !== "household" || householdId === null) return;
+    const supabase = createClient();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const channel = supabase
+      .channel(`household-list-${householdId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "household_list_items", filter: `household_id=eq.${householdId}` },
+        () => {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(() => router.refresh(), 400); // one refresh for a burst of changes
+        },
+      )
+      .subscribe();
+    return () => {
+      if (timer) clearTimeout(timer);
+      void supabase.removeChannel(channel);
+    };
+  }, [scope, householdId, router]);
 
   async function toggle(id: number) {
     const next = !checked.has(id);
@@ -75,12 +100,12 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
       return updated;
     });
     const queue = () => {
-      enqueueTick(browserStorage(), { week, ingredientId: id, checked: next });
+      enqueueTick(browserStorage(), { week, ingredientId: id, checked: next, scope });
       setWaiting(readOutbox(browserStorage()).length);
     };
     if (!navigator.onLine) return queue();
     try {
-      const r = await setCheckedAction(id, next, week);
+      const r = await setCheckedAction(id, next, week, scope);
       if (!r.ok) {
         setError(r.error);
         setChecked((current) => {
@@ -115,7 +140,7 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
     event.preventDefault();
     const label = newItem;
     run(async () => {
-      const r = await addCustomItemAction(label);
+      const r = await addCustomItemAction(label, scope);
       if (r.ok) setNewItem("");
       return r;
     });
@@ -249,13 +274,13 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
                   id={`custom-${c.id}`}
                   checked={c.checked}
                   disabled={pending}
-                  onChange={() => run(() => setCustomCheckedAction(c.id, !c.checked))}
+                  onChange={() => run(() => setCustomCheckedAction(c.id, !c.checked, scope))}
                   className="h-5 w-5 shrink-0 accent-emerald-700"
                 />
                 <label htmlFor={`custom-${c.id}`} className={`flex-1 ${c.checked ? "text-zinc-600 line-through dark:text-zinc-400" : ""}`}>
                   {c.label}
                 </label>
-                <button type="button" disabled={pending} onClick={() => run(() => deleteCustomItemAction(c.id))} className={linkButton}>
+                <button type="button" disabled={pending} onClick={() => run(() => deleteCustomItemAction(c.id, scope))} className={linkButton}>
                   Remove<span className="sr-only"> {c.label}</span>
                 </button>
               </li>

@@ -24,11 +24,13 @@ grocery apps, and works offline as an installable app.
 - **Installable & offline** — add to your home screen; Today, Week and your shopping list work without internet and
   ticks sync later.
 - **Meal reminders** — optional push notifications at your meal times.
+- **Household sharing** — invite family with a code; everyone keeps their own plan and allergies, and shares one
+  combined shopping list that updates live on every phone. Members see only each other's chosen names.
 - **Discover** — extra recipe ideas from Spoonacular.
 
 ## Tech stack (all free tiers)
 
-Next.js 16 (App Router, TypeScript, Tailwind) · Supabase (Postgres, Auth, Row Level Security, pg_cron) · Vercel Hobby ·
+Next.js 16 (App Router, TypeScript, Tailwind) · Supabase (Postgres, Auth, Row Level Security, Realtime, pg_cron) · Vercel Hobby ·
 USDA FoodData Central · Open Food Facts · Google Gemini (free tier) · Spoonacular (free tier) · Vitest.
 
 ## Run it on your computer

@@ -623,7 +623,12 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       service-role key needed. The cron job + secret are in git-ignored `supabase/local/reminders-setup.sql`. Env:
       `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET` (web-push library). UI on /profile; SW v3 shows
       notifications. iPhone needs the installed app (iOS 16.4+).
-- [ ] **Step 32 — Household sharing:** invite family, shared plan + live shopping list (Supabase Realtime).
+- [x] **Step 32 — Household sharing:** invite family, shared plan + live shopping list (Supabase Realtime).
+      Changed scope: each member keeps their OWN plan (allergy safety, own portions); the household shares ONE combined
+      shopping list. Migration 0013: `households`, `household_members` (display names only, one household per user, max 8),
+      `household_invites` (8-char code, 7 days), `household_list_items` (shared ticks/extras, in the Realtime publication),
+      `my_household_id()`, `create_household()`, `join_household()`, `household_week_slots()` (recipe ids + portions only).
+      `/household` page; `/shopping?list=household` tab with live refresh.
 - [ ] **Step 33 — v2 launch check:** full phone walkthrough online + offline, a11y audit, security/RLS review,
       confirm every service still on a free plan.
 

@@ -3,16 +3,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import ShoppingListView from "@/components/ShoppingListView";
 import { getCurrentProfile } from "@/lib/profile-server";
+import { getMyHousehold } from "@/lib/household-server";
 import { getShoppingData } from "@/lib/shopping-server";
 
 export const metadata: Metadata = {
   title: "Shopping list · Meal Planner",
 };
 
-export default async function ShoppingPage() {
+export default async function ShoppingPage({ searchParams }: PageProps<"/shopping">) {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/profile");
-  const data = await getShoppingData(profile);
+  const household = await getMyHousehold();
+  const scope = (await searchParams).list === "household" && household ? "household" : "me";
+  const data = await getShoppingData(profile, scope, household?.id ?? null);
+  const tab = "flex-1 rounded-md px-3 py-2 text-center text-sm font-medium";
 
   const monday = new Date(`${data.plan.weekStart}T12:00:00Z`);
   const weekLabel = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", day: "numeric", month: "short" }).format(monday);
@@ -31,8 +35,33 @@ export default async function ShoppingPage() {
           Meal plan
         </Link>
       </div>
+      {household ? (
+        <nav aria-label="Which list" className="flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+          <Link href="/shopping" aria-current={scope === "me" ? "page" : undefined} className={`${tab} ${scope === "me" ? "bg-white shadow-sm dark:bg-zinc-700" : "text-zinc-600 dark:text-zinc-400"}`}>
+            Just me
+          </Link>
+          <Link
+            href="/shopping?list=household"
+            aria-current={scope === "household" ? "page" : undefined}
+            className={`${tab} ${scope === "household" ? "bg-white shadow-sm dark:bg-zinc-700" : "text-zinc-600 dark:text-zinc-400"}`}
+          >
+            {household.name} ({household.members.length})
+          </Link>
+        </nav>
+      ) : (
+        <p className="text-sm">
+          <Link href="/household" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+            Share this list with family →
+          </Link>
+        </p>
+      )}
+      {scope === "household" && (
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Everyone&apos;s meals this week, added together. Ticks show up live for the whole household.</p>
+      )}
       <ShoppingListView
-        key={data.checkedIds.join(",")}
+        key={`${scope}-${data.checkedIds.join(",")}-${data.custom.map((c) => `${c.id}${c.checked ? "x" : ""}`).join(",")}`}
+        scope={scope}
+        householdId={household?.id ?? null}
         week={data.plan.weekStart}
         list={data.list}
         checkedIds={data.checkedIds}
