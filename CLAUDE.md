@@ -631,6 +631,13 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       `/household` page; `/shopping?list=household` tab with live refresh.
 - [ ] **Step 33 — v2 launch check:** full phone walkthrough online + offline, a11y audit, security/RLS review,
       confirm every service still on a free plan.
+      Automated checks passed 2026-09-27: migrations through 0013 live; stranger probe of all 19 tables + 9 functions —
+      private tables read `[]`, every write refused (401), user-only functions refuse strangers, `claim_due_reminders`
+      returns nothing for a wrong secret, `private.app_secrets` not exposed; cron endpoint 401 without the right secret;
+      protected pages redirect to login; 0 vulnerabilities; no secrets in git history; axe 0 violations on public pages
+      (signed-in pages audited in their own steps); 277 tests, lint, types and build pass. Added security headers
+      (nosniff, no framing, referrer policy, permissions policy with camera kept for the scanner).
+      **Remaining (owner):** phone walkthrough online + offline, and confirm the free plans (checklist in chat).
 
 ## 23. v2 free-plan limits to design around
 

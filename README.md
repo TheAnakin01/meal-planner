@@ -65,6 +65,12 @@ Run the files in `supabase/migrations/` **in order** (0001 → latest) in the Su
 enable the `pg_cron` and `pg_net` extensions and run the scheduler SQL kept locally in `supabase/local/`
 (git-ignored because it contains a secret).
 
+## Security
+
+Every table uses Row Level Security, so people only ever see their own data (and their household's shared list).
+Secret keys stay on the server, the reminder scheduler is protected by a secret, and the site sends standard browser
+security headers.
+
 ## Data sources & credits
 
 - Recipes (Discover) powered by [spoonacular](https://spoonacular.com/food-api).
