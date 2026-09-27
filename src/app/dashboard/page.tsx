@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import MacroSummary from "@/components/MacroSummary";
+import MealPlan, { MealPlanSkeleton } from "@/components/MealPlan";
 import { allergenLabel } from "@/lib/allergens";
 import { calculateNutritionPlan } from "@/lib/nutrition";
 import { getCurrentProfile } from "@/lib/profile-server";
@@ -29,7 +31,23 @@ export default async function DashboardPage() {
           Edit details
         </Link>
       </div>
+
       <MacroSummary plan={plan} excluding={excluding} />
+
+      <div className="mt-10">
+        {/* Targets show straight away; recipes stream in when Spoonacular answers. */}
+        <Suspense fallback={<MealPlanSkeleton />}>
+          <MealPlan profile={profile} plan={plan} />
+        </Suspense>
+      </div>
+
+      <div className="mt-10 space-y-2 text-xs text-zinc-500">
+        <p>
+          Recipes are filtered for your allergies twice, but recipe data comes from third parties and may be
+          wrong. Always check ingredient labels before cooking.
+        </p>
+        <p>Calorie and nutrient figures are estimates, not medical advice.</p>
+      </div>
     </main>
   );
 }

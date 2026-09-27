@@ -27,6 +27,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         {children}
+        <footer className="border-t border-zinc-200 dark:border-zinc-800">
+          {/* Backlink required by the Spoonacular free plan (CLAUDE.md §4.3). */}
+          <p className="mx-auto w-full max-w-3xl px-4 py-4 text-xs text-zinc-500">
+            Recipes powered by{" "}
+            <a href="https://spoonacular.com/food-api" className="underline hover:text-zinc-700 dark:hover:text-zinc-300">
+              spoonacular
+            </a>
+          </p>
+        </footer>
       </body>
     </html>
   );

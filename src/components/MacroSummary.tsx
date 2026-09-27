@@ -1,10 +1,4 @@
-import type { MealType, NutritionPlan } from "@/lib/nutrition";
-
-const MEAL_LABELS: Record<MealType, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-};
+import type { NutritionPlan } from "@/lib/nutrition";
 
 interface MacroSummaryProps {
   plan: NutritionPlan;
@@ -21,7 +15,7 @@ export default function MacroSummary({ plan, excluding }: MacroSummaryProps) {
   const macroKcal = macros.reduce((sum, m) => sum + m.kcal, 0);
 
   return (
-    <section aria-label="Your daily plan" className="space-y-4">
+    <section aria-label="Your daily targets" className="space-y-4">
       <div className="rounded-xl bg-emerald-600 p-5 text-white">
         <p className="text-sm font-medium opacity-90">Daily calorie target</p>
         <p className="mt-1 text-4xl font-bold">
@@ -33,7 +27,7 @@ export default function MacroSummary({ plan, excluding }: MacroSummaryProps) {
       </div>
 
       <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-        <h3 className="font-semibold">Macros</h3>
+        <h2 className="font-semibold">Macros</h2>
         <div
           className="mt-3 flex h-3 overflow-hidden rounded-full"
           role="img"
@@ -54,30 +48,11 @@ export default function MacroSummary({ plan, excluding }: MacroSummaryProps) {
         </ul>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-        <h3 className="font-semibold">Calories per meal</h3>
-        <ul className="mt-3 divide-y divide-zinc-200 dark:divide-zinc-800">
-          {(Object.keys(MEAL_LABELS) as MealType[]).map((meal) => (
-            <li key={meal} className="flex justify-between py-2">
-              <span>{MEAL_LABELS[meal]}</span>
-              <span className="font-semibold">{plan.meals[meal].calories.toLocaleString()} kcal</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
-          Recipe suggestions for each meal are coming soon.
-        </p>
-      </div>
-
       {excluding.length > 0 && (
         <p className="text-sm">
           <span className="font-semibold">Excluding:</span> {excluding.join(", ")}
         </p>
       )}
-
-      <p className="text-xs text-zinc-500">
-        Estimates only, not medical advice. Consult a professional before changing your diet.
-      </p>
     </section>
   );
 }

@@ -30,12 +30,18 @@ export async function searchRecipes(search: RecipeSearch): Promise<RecipeResult>
   const params = buildSearchParams(search);
   params.set("apiKey", apiKey);
 
+  const url = `${SPOONACULAR_SEARCH_URL}?${params}`;
+  const request = () =>
+    fetch(url, { next: { revalidate: CACHE_SECONDS }, signal: AbortSignal.timeout(10_000) });
+
   let response: Response;
   try {
-    response = await fetch(`${SPOONACULAR_SEARCH_URL}?${params}`, {
-      next: { revalidate: CACHE_SECONDS },
-      signal: AbortSignal.timeout(10_000),
-    });
+    response = await request();
+    // Free plan allows 1 request per second: wait and retry once.
+    if (response.status === 429) {
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+      response = await request();
+    }
   } catch {
     return { ok: false, error: "unavailable" };
   }

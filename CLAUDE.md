@@ -85,7 +85,8 @@ Meal_Planner/
 │   │   ├── nutrition.ts       # BMR / TDEE / calorie & macro maths (§5.1, §5.2)
 │   │   ├── allergens.ts       # allergy list + Spoonacular mapping (§5.3 layer 1)
 │   │   ├── allergen-safety.ts # keyword + flag double-check on every recipe (§5.3 layer 2)
-│   │   ├── recipes.ts         # Spoonacular request builder, response parsing, caching (server-only)
+│   │   ├── spoonacular.ts     # Spoonacular request builder + response parsing (pure, tested)
+│   │   ├── recipes.ts         # server-only Spoonacular fetch: key, 1-hour cache, errors, layer-2 filter
 │   │   ├── validation.ts      # zod schemas for the profile form
 │   │   └── supabase/
 │   │       ├── client.ts      # browser client
@@ -222,8 +223,8 @@ GET https://api.spoonacular.com/recipes/complexSearch
   &sort=random&number=6
 ```
 - Points per meal search: docs suggest ≈ 2.2, but a real call on 2026-09-27 cost **1.36**; a full plan ≈ 4.1 of the 50/day.
-- Fetch a **pool of 6 per meal** in one call; the UI shows a few and "Show another" rotates through the pool
-  (no extra API calls).
+- Fetch a **pool of 6 per meal** in one call; "Show another" rotates through the pool
+  (no extra API calls). The dashboard shows one card per meal at a time.
 - Cache each unique query for **1 hour** (`fetch` with `next: { revalidate: 3600 }`) — the maximum Spoonacular allows.
 - Handle errors: 401 (bad key), **402 (daily points used up → "Recipe limit reached for today, try again after
   midnight UTC")**, 429 (too fast), network failure. Never show a recipe that failed the §5.3 checks.
@@ -309,7 +310,7 @@ Each step ends with a commit + push. Tick boxes as you go.
 - [x] **Step 7 — Save profile:** load/save profile from Supabase; redirect new users to `/profile`.
 - [x] **Step 8 — Recipe API (Spoonacular):** sign up (free, no card), `src/lib/recipes.ts`, caching, error handling.
 - [x] **Step 9 — Allergen safety:** `src/lib/allergen-safety.ts`, two-layer filtering, unit tests (§5.3).
-- [ ] **Step 10 — Dashboard UI:** macro summary, meal sections, recipe cards, "Show another", spoonacular backlink.
+- [x] **Step 10 — Dashboard UI:** macro summary, meal sections, recipe cards, "Show another", spoonacular backlink.
 - [ ] **Step 11 — Saved recipes (optional):** heart button → `saved_recipes` table, "My saved recipes" list.
 - [ ] **Step 12 — Polish:** mobile testing (360px, 768px), accessibility, loading/empty/error states, disclaimers.
 - [ ] **Step 13 — Launch check:** add Vercel URL to Supabase redirect URLs, test sign-up → profile → plan on a phone,
