@@ -355,6 +355,8 @@ git add -A && git commit -m "message" && git push   # save + deploy
 - Pure calculation functions in `src/lib/` with unit tests.
 - Small, focused components; Tailwind for styles; no paid UI kits.
 - Commit messages: short imperative ("Add profile form").
+- **Keep README.md up to date** in the same commit whenever a step adds a feature, env var, migration or data source.
+- License: MIT (`LICENSE`, © 2026 TheAnakin01).
 
 ---
 
