@@ -3,9 +3,10 @@ import type { NutritionPlan } from "@/lib/nutrition";
 interface MacroSummaryProps {
   plan: NutritionPlan;
   excluding: string[];
+  diet: string;
 }
 
-export default function MacroSummary({ plan, excluding }: MacroSummaryProps) {
+export default function MacroSummary({ plan, excluding, diet }: MacroSummaryProps) {
   const { proteinG, carbsG, fatG } = plan.macros;
   const macros = [
     { name: "Protein", grams: proteinG, kcal: proteinG * 4, color: "bg-sky-500" },
@@ -48,11 +49,15 @@ export default function MacroSummary({ plan, excluding }: MacroSummaryProps) {
         </ul>
       </div>
 
-      {excluding.length > 0 && (
-        <p className="text-sm">
-          <span className="font-semibold">Excluding:</span> {excluding.join(", ")}
-        </p>
-      )}
+      <p className="text-sm">
+        <span className="font-semibold">Diet:</span> {diet}
+        {excluding.length > 0 && (
+          <>
+            {" · "}
+            <span className="font-semibold">Excluding:</span> {excluding.join(", ")}
+          </>
+        )}
+      </p>
     </section>
   );
 }

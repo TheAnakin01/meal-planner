@@ -11,6 +11,9 @@ const valid = {
   goal: "maintain",
   allergies: ["peanut-free", "dairy-free"],
   otherAllergies: ["kiwi"],
+  dietType: "veg",
+  preferredStore: "bigbasket",
+  timezone: "Asia/Kolkata",
 };
 
 const errorFields = (input: unknown) => {
@@ -38,6 +41,17 @@ describe("profileSchema", () => {
     expect(
       errorFields({ ...valid, gender: undefined, activityLevel: undefined, goal: undefined }),
     ).toEqual(["gender", "activityLevel", "goal"]);
+  });
+
+  it("requires a diet type and a known store", () => {
+    expect(errorFields({ ...valid, dietType: undefined })).toEqual(["dietType"]);
+    expect(errorFields({ ...valid, dietType: "carnivore" })).toEqual(["dietType"]);
+    expect(errorFields({ ...valid, preferredStore: "unknown-mart" })).toEqual(["preferredStore"]);
+  });
+
+  it("accepts real timezones and rejects made-up ones", () => {
+    expect(errorFields({ ...valid, timezone: "Europe/London" })).toEqual([]);
+    expect(errorFields({ ...valid, timezone: "Mars/Olympus" })).toEqual(["timezone"]);
   });
 
   it("rejects unknown allergy labels", () => {

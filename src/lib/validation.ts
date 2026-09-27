@@ -3,6 +3,18 @@
 
 import { z } from "zod";
 import { ALLERGEN_IDS } from "@/lib/allergens";
+import { DIET_TYPE_IDS } from "@/lib/diet";
+import { STORE_IDS } from "@/lib/stores";
+
+// True if the browser/server knows this IANA timezone name (e.g. "Asia/Kolkata").
+export function isValidTimezone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export const profileSchema = z.object({
   age: z
@@ -32,6 +44,9 @@ export const profileSchema = z.object({
         .regex(/^[a-z][a-z '-]*$/, "Use letters only, separated by commas (e.g. kiwi, strawberry)."),
     )
     .max(20, "Please list at most 20 other allergies."),
+  dietType: z.enum(DIET_TYPE_IDS, { error: "Please choose your diet type." }),
+  preferredStore: z.enum(STORE_IDS, { error: "Please choose a store." }),
+  timezone: z.string().max(64).refine(isValidTimezone, "Unknown timezone."),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;

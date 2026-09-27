@@ -3,6 +3,7 @@
 
 import "server-only";
 import { filterSafeRecipes } from "@/lib/allergen-safety";
+import { filterDietRecipes } from "@/lib/diet";
 import {
   type Recipe,
   type RecipeSearch,
@@ -56,7 +57,7 @@ export async function searchRecipes(search: RecipeSearch): Promise<RecipeResult>
 
   const body: unknown = await response.json().catch(() => null);
   const recipes = parseSearchResponse(body, search.target);
-  // Layer 2: our own allergen check. Spoonacular's filter alone is not safe enough.
+  // Layer 2: our own allergen and diet checks. Spoonacular's filters alone are not safe enough.
   const safe = filterSafeRecipes(recipes, search.allergies, search.otherAllergies);
-  return { ok: true, recipes: safe };
+  return { ok: true, recipes: filterDietRecipes(safe, search.dietType) };
 }

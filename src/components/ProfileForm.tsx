@@ -3,8 +3,10 @@
 import { type FormEvent, type ReactNode, useState, useTransition } from "react";
 import { saveProfile } from "@/app/profile/actions";
 import { ALLERGENS, type AllergenId, parseOtherAllergies } from "@/lib/allergens";
+import { DIET_TYPES } from "@/lib/diet";
 import { feetInchesToCm, poundsToKg } from "@/lib/nutrition";
-import { type ProfileField, type ProfileInput, profileSchema } from "@/lib/validation";
+import { DEFAULT_STORE, STORES } from "@/lib/stores";
+import { type ProfileField, type ProfileInput, isValidTimezone, profileSchema } from "@/lib/validation";
 
 type Units = "metric" | "imperial";
 type Errors = Partial<Record<ProfileField, string>>;
@@ -38,8 +40,8 @@ const inputClass =
 const toNumber = (value: string) => (value.trim() === "" ? NaN : Number(value));
 
 // Prefill imperial fields from saved metric values, in case the user switches units.
-function toImperial(initial?: ProfileInput) {
-  if (!initial) return { lb: "", ft: "", in: "" };
+function toImperial(initial: Partial<ProfileInput>) {
+  if (initial.heightCm === undefined || initial.weightKg === undefined) return { lb: "", ft: "", in: "" };
   const totalInches = Math.round(initial.heightCm / 2.54);
   return {
     lb: String(Math.round(initial.weightKg / 0.45359237)),
@@ -48,20 +50,30 @@ function toImperial(initial?: ProfileInput) {
   };
 }
 
-export default function ProfileForm({ initial }: { initial?: ProfileInput }) {
+const STORE_OPTIONS = STORES.map((s) => ({ value: s.id, label: s.name }));
+
+// The phone's timezone, e.g. "Asia/Kolkata". Used later for "today" and meal reminders.
+function detectTimezone(): string {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return tz && isValidTimezone(tz) ? tz : "Asia/Kolkata";
+}
+
+export default function ProfileForm({ initial = {} }: { initial?: Partial<ProfileInput> }) {
   const imperial = toImperial(initial);
   const [units, setUnits] = useState<Units>("metric");
-  const [age, setAge] = useState(initial ? String(initial.age) : "");
-  const [weightKg, setWeightKg] = useState(initial ? String(initial.weightKg) : "");
-  const [heightCm, setHeightCm] = useState(initial ? String(initial.heightCm) : "");
+  const [age, setAge] = useState(initial.age !== undefined ? String(initial.age) : "");
+  const [weightKg, setWeightKg] = useState(initial.weightKg !== undefined ? String(initial.weightKg) : "");
+  const [heightCm, setHeightCm] = useState(initial.heightCm !== undefined ? String(initial.heightCm) : "");
   const [weightLb, setWeightLb] = useState(imperial.lb);
   const [heightFt, setHeightFt] = useState(imperial.ft);
   const [heightIn, setHeightIn] = useState(imperial.in);
-  const [gender, setGender] = useState<string>(initial?.gender ?? "");
-  const [activityLevel, setActivityLevel] = useState<string>(initial?.activityLevel ?? "");
-  const [goal, setGoal] = useState<string>(initial?.goal ?? "");
-  const [allergies, setAllergies] = useState<AllergenId[]>(initial?.allergies ?? []);
-  const [otherAllergies, setOtherAllergies] = useState(initial?.otherAllergies.join(", ") ?? "");
+  const [gender, setGender] = useState<string>(initial.gender ?? "");
+  const [activityLevel, setActivityLevel] = useState<string>(initial.activityLevel ?? "");
+  const [goal, setGoal] = useState<string>(initial.goal ?? "");
+  const [allergies, setAllergies] = useState<AllergenId[]>(initial.allergies ?? []);
+  const [otherAllergies, setOtherAllergies] = useState(initial.otherAllergies?.join(", ") ?? "");
+  const [dietType, setDietType] = useState<string>(initial.dietType ?? "");
+  const [preferredStore, setPreferredStore] = useState<string>(initial.preferredStore ?? DEFAULT_STORE);
 
   const [errors, setErrors] = useState<Errors>({});
   const [saveError, setSaveError] = useState("");
@@ -92,6 +104,9 @@ export default function ProfileForm({ initial }: { initial?: ProfileInput }) {
       goal: goal || undefined,
       allergies,
       otherAllergies: parseOtherAllergies(otherAllergies),
+      dietType: dietType || undefined,
+      preferredStore,
+      timezone: detectTimezone(),
     });
 
     if (!parsed.success) {
@@ -271,6 +286,16 @@ export default function ProfileForm({ initial }: { initial?: ProfileInput }) {
         columns="grid-cols-3"
       />
 
+      <ChoiceGroup
+        name="dietType"
+        legend="Diet type"
+        options={DIET_TYPES.map((d) => ({ value: d.id, label: d.label, hint: d.hint }))}
+        value={dietType}
+        onChange={setDietType}
+        error={errors.dietType}
+        columns="sm:grid-cols-2"
+      />
+
       <fieldset>
         <legend className="font-semibold">Allergies</legend>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -316,6 +341,22 @@ export default function ProfileForm({ initial }: { initial?: ProfileInput }) {
       {Object.keys(errors).length > 0 && (
         <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
           Please fix the highlighted fields above.
+        </p>
+      )}
+
+      <ChoiceGroup
+        name="preferredStore"
+        legend="Where do you usually buy groceries online?"
+        options={STORE_OPTIONS}
+        value={preferredStore}
+        onChange={setPreferredStore}
+        error={errors.preferredStore}
+        columns="grid-cols-2 sm:grid-cols-3"
+      />
+
+      {errors.timezone && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          We couldn&apos;t detect your timezone. Please check your phone&apos;s date and time settings.
         </p>
       )}
 

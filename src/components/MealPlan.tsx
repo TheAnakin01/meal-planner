@@ -38,6 +38,7 @@ export default async function MealPlan({ profile, plan }: MealPlanProps) {
       target,
       allergies: profile.allergies,
       otherAllergies: profile.otherAllergies,
+      dietType: profile.dietType,
     });
     sections.push(
       <MealSection

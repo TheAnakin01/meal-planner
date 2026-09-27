@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import MacroSummary from "@/components/MacroSummary";
 import MealPlan, { MealPlanSkeleton } from "@/components/MealPlan";
 import { allergenLabel } from "@/lib/allergens";
+import { dietLabel } from "@/lib/diet";
 import { calculateNutritionPlan } from "@/lib/nutrition";
 import { getCurrentProfile } from "@/lib/profile-server";
 
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <MacroSummary plan={plan} excluding={excluding} />
+      <MacroSummary plan={plan} excluding={excluding} diet={dietLabel(profile.dietType)} />
 
       <div className="mt-10">
         {/* Targets show straight away; recipes stream in when Spoonacular answers. */}

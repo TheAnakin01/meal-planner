@@ -19,6 +19,8 @@ function recipe(title: string, ingredients: string[], flags: Partial<Recipe> = {
     ingredients,
     dairyFree: true,
     glutenFree: true,
+    vegetarian: true,
+    vegan: true,
     ...flags,
   };
 }

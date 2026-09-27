@@ -54,6 +54,7 @@ describe("buildSearchParams", () => {
       target,
       allergies: ["dairy-free", "sesame-free", "lupine-free"],
       otherAllergies: ["kiwi"],
+      dietType: "nonveg",
     });
     expect(Object.fromEntries(params)).toEqual({
       type: "breakfast",
@@ -68,14 +69,25 @@ describe("buildSearchParams", () => {
   });
 
   it("uses main course for lunch and dinner and omits empty filters", () => {
-    const params = buildSearchParams({ meal: "dinner", target, allergies: [], otherAllergies: [] });
+    const params = buildSearchParams({ meal: "dinner", target, allergies: [], otherAllergies: [], dietType: "nonveg" });
     expect(params.get("type")).toBe("main course");
     expect(params.has("intolerances")).toBe(false);
     expect(params.has("excludeIngredients")).toBe(false);
   });
 
+  it("adds Spoonacular's diet filter and diet excludes, merged with allergy excludes", () => {
+    const jain = buildSearchParams({ meal: "lunch", target, allergies: ["celery-free"], otherAllergies: [], dietType: "jain" });
+    expect(jain.get("diet")).toBe("vegetarian");
+    expect(jain.get("excludeIngredients")).toBe("carrot,celeriac,celery,egg,garlic,mushroom,onion,potato");
+    const vegan = buildSearchParams({ meal: "lunch", target, allergies: [], otherAllergies: [], dietType: "vegan" });
+    expect(vegan.get("diet")).toBe("vegan");
+    expect(vegan.has("excludeIngredients")).toBe(false);
+    const nonveg = buildSearchParams({ meal: "lunch", target, allergies: [], otherAllergies: [], dietType: "nonveg" });
+    expect(nonveg.has("diet")).toBe(false);
+  });
+
   it("never includes the API key", () => {
-    const params = buildSearchParams({ meal: "lunch", target, allergies: [], otherAllergies: [] });
+    const params = buildSearchParams({ meal: "lunch", target, allergies: [], otherAllergies: [], dietType: "nonveg" });
     expect(params.has("apiKey")).toBe(false);
   });
 });
@@ -97,6 +109,8 @@ describe("parseRecipe", () => {
       ingredients: ["rolled oats", "blueberries"],
       dairyFree: true,
       glutenFree: false,
+      vegetarian: null,
+      vegan: null,
     });
   });
 

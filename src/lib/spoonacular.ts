@@ -3,6 +3,7 @@
 
 import { z } from "zod";
 import { type AllergenId, spoonacularExcludes, spoonacularIntolerances } from "@/lib/allergens";
+import { type DietType, spoonacularDietParams } from "@/lib/diet";
 import type { MealTarget, MealType } from "@/lib/nutrition";
 
 export const SPOONACULAR_SEARCH_URL = "https://api.spoonacular.com/recipes/complexSearch";
@@ -31,6 +32,8 @@ export interface Recipe {
   ingredients: string[];
   dairyFree: boolean | null;
   glutenFree: boolean | null;
+  vegetarian: boolean | null;
+  vegan: boolean | null;
 }
 
 export interface RecipeSearch {
@@ -38,10 +41,11 @@ export interface RecipeSearch {
   target: MealTarget;
   allergies: readonly AllergenId[];
   otherAllergies: readonly string[];
+  dietType: DietType;
 }
 
 // Builds the search URL without the API key (the key is added just before fetching).
-export function buildSearchParams({ meal, target, allergies, otherAllergies }: RecipeSearch) {
+export function buildSearchParams({ meal, target, allergies, otherAllergies, dietType }: RecipeSearch) {
   const params = new URLSearchParams({
     type: SPOONACULAR_MEAL_TYPE[meal],
     minCalories: String(target.min),
@@ -54,7 +58,10 @@ export function buildSearchParams({ meal, target, allergies, otherAllergies }: R
   const intolerances = spoonacularIntolerances(allergies);
   if (intolerances.length > 0) params.set("intolerances", intolerances.join(","));
 
-  const excludes = spoonacularExcludes(allergies, otherAllergies);
+  const diet = spoonacularDietParams(dietType);
+  if (diet.diet) params.set("diet", diet.diet);
+
+  const excludes = [...new Set([...spoonacularExcludes(allergies, otherAllergies), ...diet.excludes])].sort();
   if (excludes.length > 0) params.set("excludeIngredients", excludes.join(","));
 
   return params;
@@ -73,6 +80,8 @@ const resultSchema = z.object({
   readyInMinutes: z.number().optional(),
   dairyFree: z.boolean().optional(),
   glutenFree: z.boolean().optional(),
+  vegetarian: z.boolean().optional(),
+  vegan: z.boolean().optional(),
   nutrition: z
     .object({
       nutrients: z.array(nutrientSchema).default([]),
@@ -115,6 +124,8 @@ export function parseRecipe(raw: unknown): Recipe | null {
     ingredients,
     dairyFree: r.dairyFree ?? null,
     glutenFree: r.glutenFree ?? null,
+    vegetarian: r.vegetarian ?? null,
+    vegan: r.vegan ?? null,
   };
 }
 

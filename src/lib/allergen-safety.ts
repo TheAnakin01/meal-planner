@@ -168,13 +168,34 @@ export interface SafetyResult {
   reasons: string[];
 }
 
+type RecipeText = Pick<Recipe, "title" | "ingredients">;
+
+function recipeText(recipe: RecipeText): string {
+  return normalize([recipe.title, ...recipe.ingredients].join(" | "));
+}
+
+// The first keyword of this allergen's rule found in the recipe (after removing safe phrases), or null.
+// Shared with the diet rules in diet.ts.
+export function findAllergenHit(recipe: RecipeText, id: AllergenId): string | null {
+  const rule = RULES[id];
+  const cleaned = removePhrases(
+    removePrefixedWords(recipeText(recipe), rule.safePrefixes ?? []),
+    rule.safePhrases ?? [],
+  );
+  return findKeyword(cleaned, rule.keywords);
+}
+
+// The first of these words found in the recipe's title or ingredients (whole words, plurals included), or null.
+export function findWordHit(recipe: RecipeText, words: readonly string[]): string | null {
+  return findKeyword(recipeText(recipe), words);
+}
+
 export function checkRecipeSafety(
   recipe: Pick<Recipe, "title" | "ingredients" | "dairyFree" | "glutenFree">,
   allergies: readonly AllergenId[],
   otherAllergies: readonly string[],
 ): SafetyResult {
   const reasons: string[] = [];
-  const text = normalize([recipe.title, ...recipe.ingredients].join(" | "));
 
   for (const id of allergies) {
     // Spoonacular's own labels: if it says the recipe isn't free of the allergen, believe it.
@@ -183,13 +204,11 @@ export function checkRecipeSafety(
       reasons.push(`${id}: flagged by Spoonacular`);
     }
 
-    const rule = RULES[id];
-    const cleaned = removePhrases(removePrefixedWords(text, rule.safePrefixes ?? []), rule.safePhrases ?? []);
-    const hit = findKeyword(cleaned, rule.keywords);
+    const hit = findAllergenHit(recipe, id);
     if (hit) reasons.push(`${id}: "${hit}"`);
   }
 
-  const otherHit = findKeyword(text, otherAllergies);
+  const otherHit = findWordHit(recipe, otherAllergies);
   if (otherHit) reasons.push(`other: "${otherHit}"`);
 
   return { safe: reasons.length === 0, reasons };
