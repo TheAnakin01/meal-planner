@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
-import { askCoachAction, clearCoachHistoryAction, setCoachEnabledAction } from "@/app/coach/actions";
+import { askCoachAction, clearCoachHistoryAction, resolveCoachActionAction, setCoachEnabledAction } from "@/app/coach/actions";
 import type { CoachMessage } from "@/lib/coach-server";
 
 const SUGGESTIONS = [
@@ -110,9 +110,18 @@ export default function CoachChat({ enabled, messages, remaining }: Props) {
             </div>
           </div>
         )}
-        {messages.map((m) => (
-          <Bubble key={m.id} role={m.role} text={m.content} />
-        ))}
+        {messages.map((m) =>
+          m.action ? (
+            <ActionCard
+              key={m.id}
+              message={m}
+              pending={pending}
+              onResolve={(confirm) => run(() => resolveCoachActionAction(m.id, confirm))}
+            />
+          ) : (
+            <Bubble key={m.id} role={m.role} text={m.content} />
+          ),
+        )}
         {asked && (
           <>
             <Bubble role="user" text={asked} />
@@ -181,6 +190,47 @@ export default function CoachChat({ enabled, messages, remaining }: Props) {
           Turn off coach
         </button>
       </div>
+    </div>
+  );
+}
+
+function ActionCard({
+  message,
+  pending,
+  onResolve,
+}: {
+  message: CoachMessage;
+  pending: boolean;
+  onResolve: (confirm: boolean) => void;
+}) {
+  return (
+    <div className="max-w-[85%] rounded-2xl border border-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-zinc-900 dark:bg-emerald-950 dark:text-zinc-100">
+      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">Coach suggests</p>
+      <p className="mt-1">{message.content}</p>
+      {message.actionStatus === "proposed" ? (
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onResolve(true)}
+            className="rounded-lg bg-emerald-700 px-3 py-1.5 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+          >
+            Confirm
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onResolve(false)}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 font-semibold hover:bg-white disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <p className="mt-2 font-medium">
+          {message.actionStatus === "done" ? `✓ ${message.actionResult ?? "Done."}` : "Cancelled."}
+        </p>
+      )}
     </div>
   );
 }

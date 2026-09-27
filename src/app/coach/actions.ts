@@ -11,7 +11,10 @@ import {
   coachSystemInstruction,
   trimReply,
 } from "@/lib/coach";
-import { coachAllowance, coachContext, getCoachHistory, isCoachEnabled, pruneOldMessages } from "@/lib/coach-server";
+import { COACH_TOOLS, DAY_NAMES, coachActionSchema, describeAction, parseFunctionCalls, shoppingItemWarning } from "@/lib/coach-actions";
+import { type CoachMessage, coachAllowance, coachContext, getCoachHistory, isCoachEnabled, pruneOldMessages } from "@/lib/coach-server";
+import { addCustomItemAction } from "@/app/shopping/actions";
+import { swapMealAction } from "@/app/week/actions";
 import { type GeminiError, generateChatReply } from "@/lib/gemini-server";
 import { MEALS, dayIndex } from "@/lib/planner";
 import { getOrCreateWeekPlan } from "@/lib/plan-server";
@@ -94,7 +97,7 @@ export async function askCoachAction(question: unknown): Promise<Result> {
     profile.dietType,
     calorieFloorFor(profile.gender),
   );
-  const turns = [...history.map((m) => ({ role: m.role, text: m.content })), { role: "user" as const, text: parsed.data }];
+  const turns = [...history.map((m) => ({ role: m.role, text: historyText(m) })), { role: "user" as const, text: parsed.data }];
 
   const { supabase, userId } = await coachContext();
   if (!userId) return { ok: false, error: "Please sign in again." };
@@ -103,14 +106,80 @@ export async function askCoachAction(question: unknown): Promise<Result> {
   const { error: saveError } = await supabase.from("coach_messages").insert({ user_id: userId, role: "user", content: parsed.data });
   if (saveError) return { ok: false, error: "Couldn't send your question. Please try again." };
 
-  const reply = await generateChatReply(system, turns);
+  const reply = await generateChatReply(system, turns, COACH_TOOLS);
   if (!reply.ok) {
     revalidatePath("/coach");
     return { ok: false, error: GEMINI_MESSAGES[reply.error] };
   }
 
-  const warning = allergyWarning(reply.text, profile.allergies, profile.otherAllergies);
-  const content = trimReply(warning ? `${reply.text}\n\n${warning}` : reply.text);
-  await supabase.from("coach_messages").insert({ user_id: userId, role: "model", content });
+  const actions = parseFunctionCalls(reply.functionCalls);
+  if (reply.text) {
+    const warning = allergyWarning(reply.text, profile.allergies, profile.otherAllergies);
+    const content = trimReply(warning ? `${reply.text}\n\n${warning}` : reply.text);
+    await supabase.from("coach_messages").insert({ user_id: userId, role: "model", content });
+  }
+  // Each proposed action becomes its own card with Confirm / Cancel. Nothing changes until the user confirms.
+  for (const action of actions) {
+    const warning = action.type === "add_to_shopping_list" ? shoppingItemWarning(action.item, profile.allergies, profile.otherAllergies) : null;
+    await supabase.from("coach_messages").insert({
+      user_id: userId,
+      role: "model",
+      content: warning ? `${describeAction(action)}. ⚠️ ${warning}` : `${describeAction(action)}?`,
+      action,
+      action_status: "proposed",
+    });
+  }
+  if (!reply.text && actions.length === 0) return { ok: false, error: GEMINI_MESSAGES.bad_output };
   return done();
+}
+
+// What the model sees for earlier messages, including what happened to proposed actions.
+function historyText(m: CoachMessage): string {
+  if (!m.action || !m.actionStatus) return m.content;
+  const outcome = m.actionStatus === "proposed" ? "waiting for the user" : m.actionStatus;
+  return `[Proposed action: ${describeAction(m.action)} — ${outcome}${m.actionResult ? `: ${m.actionResult}` : ""}]`;
+}
+
+// The user confirms or cancels an action the coach proposed. Runs the app's normal, safety-checked code.
+export async function resolveCoachActionAction(messageId: unknown, confirm: unknown): Promise<Result> {
+  const id = z.number().int().positive().safeParse(messageId);
+  const yes = z.boolean().safeParse(confirm);
+  if (!id.success || !yes.success) return { ok: false, error: "Invalid action." };
+  const { supabase, userId } = await coachContext();
+  if (!userId) return { ok: false, error: "Please sign in again." };
+
+  const { data: message } = await supabase
+    .from("coach_messages")
+    .select("action, action_status")
+    .eq("id", id.data)
+    .eq("user_id", userId)
+    .maybeSingle<{ action: unknown; action_status: string | null }>();
+  const action = coachActionSchema.safeParse(message?.action);
+  if (!message || !action.success) return { ok: false, error: "That action no longer exists." };
+  if (message.action_status !== "proposed") return { ok: false, error: "That action was already handled." };
+
+  const finish = async (status: "done" | "cancelled", result: string | null) => {
+    await supabase.from("coach_messages").update({ action_status: status, action_result: result }).eq("id", id.data).eq("user_id", userId);
+    return done();
+  };
+  if (!yes.data) return finish("cancelled", null);
+
+  if (action.data.type === "add_to_shopping_list") {
+    const r = await addCustomItemAction(action.data.item);
+    if (!r.ok) return r;
+    return finish("done", "Added to your shopping list.");
+  }
+
+  const { day, meal } = action.data;
+  const r = await swapMealAction(day, meal);
+  if (!r.ok) return r;
+  const profile = await getCurrentProfile();
+  let result = `Done — ${DAY_NAMES[day]}'s ${meal} was swapped.`;
+  if (profile) {
+    const plan = await getOrCreateWeekPlan(profile);
+    const slot = plan.slots.find((s) => s.day === day && s.meal === meal);
+    const title = slot && plan.recipes.find((rec) => rec.id === slot.recipeId)?.title;
+    if (title) result = `Done — ${DAY_NAMES[day]}'s ${meal} is now ${title}.`.slice(0, 300);
+  }
+  return finish("done", result);
 }

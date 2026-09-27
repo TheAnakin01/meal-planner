@@ -26,10 +26,22 @@ export interface ChatTurn {
   text: string;
 }
 
-type TextResult = { ok: true; text: string; model: string } | { ok: false; error: GeminiError };
+export interface FunctionCall {
+  name?: unknown;
+  args?: unknown;
+}
 
-// One generateContent call with model fallback. Returns the answer's text.
-async function callGemini(systemInstruction: string, turns: ChatTurn[], generationConfig: object): Promise<TextResult> {
+type TextResult =
+  | { ok: true; text: string; functionCalls: FunctionCall[]; model: string }
+  | { ok: false; error: GeminiError };
+
+// One generateContent call with model fallback. Returns the answer's text and any function calls.
+async function callGemini(
+  systemInstruction: string,
+  turns: ChatTurn[],
+  generationConfig: object,
+  tools?: object[],
+): Promise<TextResult> {
   const apiKey = process.env.GEMINI_API_KEY?.trim().replace(/^["']|["']$/g, "");
   if (!apiKey) return { ok: false, error: "not_configured" };
 
@@ -44,6 +56,7 @@ async function callGemini(systemInstruction: string, turns: ChatTurn[], generati
           systemInstruction: { parts: [{ text: systemInstruction }] },
           contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
           generationConfig,
+          ...(tools ? { tools } : {}),
         }),
         cache: "no-store",
         signal: AbortSignal.timeout(90_000),
@@ -72,20 +85,25 @@ async function callGemini(systemInstruction: string, turns: ChatTurn[], generati
     }
 
     const body = (await response.json().catch(() => null)) as {
-      candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[];
+      candidates?: {
+        content?: { parts?: { text?: string; thought?: boolean; functionCall?: FunctionCall }[] };
+        finishReason?: string;
+      }[];
       promptFeedback?: { blockReason?: string };
     } | null;
     if (!body) return { ok: false, error: "bad_output" };
     if (body.promptFeedback?.blockReason || body.candidates?.[0]?.finishReason === "SAFETY") {
       return { ok: false, error: "blocked" };
     }
-    const text = (body.candidates?.[0]?.content?.parts ?? [])
+    const parts = body.candidates?.[0]?.content?.parts ?? [];
+    const text = parts
       .filter((p) => !p.thought)
       .map((p) => p.text ?? "")
       .join("")
       .trim();
-    if (!text) return { ok: false, error: "bad_output" };
-    return { ok: true, text, model };
+    const functionCalls = parts.flatMap((p) => (p.functionCall ? [p.functionCall] : []));
+    if (!text && functionCalls.length === 0) return { ok: false, error: "bad_output" };
+    return { ok: true, text, functionCalls, model };
   }
   return { ok: false, error: lastError };
 }
@@ -112,7 +130,8 @@ export async function generateJson({ systemInstruction, prompt, jsonSchema }: Js
   }
 }
 
-// A plain-text chat reply given the conversation so far (last turn must be the user's).
-export async function generateChatReply(systemInstruction: string, turns: ChatTurn[]): Promise<TextResult> {
-  return callGemini(systemInstruction, turns, { temperature: 0.6 });
+// A chat reply given the conversation so far (last turn must be the user's). With `tools`, the reply may
+// also contain function calls, which the caller must validate — they are only proposals.
+export async function generateChatReply(systemInstruction: string, turns: ChatTurn[], tools?: object[]): Promise<TextResult> {
+  return callGemini(systemInstruction, turns, { temperature: 0.6 }, tools);
 }

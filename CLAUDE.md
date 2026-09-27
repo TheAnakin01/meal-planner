@@ -588,7 +588,11 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       rules in `src/lib/coach.ts` (age range only; no name/email/weight/height); limits 20 questions/user/24 h and
       200/all users/24 h; every reply gets a server-added ⚠️ note if it mentions the user's allergens; history kept 30 days,
       deletable; turning the coach off deletes history. Tested live 2026-09-27 (fell back to 3.5 Flash Lite, 15 s).
-- [ ] **Step 27 — Coach actions:** swap meal / add to list via validated function calls.
+- [x] **Step 27 — Coach actions:** swap meal / add to list via validated function calls.
+      Gemini function calling (`COACH_TOOLS` in `src/lib/coach-actions.ts`); calls are parsed/validated (max 3) and stored
+      as PROPOSED action cards (migration 0009: `action`, `action_status`, `action_result`; users may update only the
+      status columns). Nothing changes until the user taps Confirm; `resolveCoachActionAction` then runs the normal
+      `swapMealAction` (planner picks a safe recipe) / `addCustomItemAction`. Tested live: 3.8 Flash, 2 s, both calls correct.
 
 **Phase E — Add-ons**
 - [ ] **Step 28 — Food diary + barcode:** manual log, recipe log, Open Food Facts barcode scan (with attribution).
