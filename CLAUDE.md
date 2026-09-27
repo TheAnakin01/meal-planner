@@ -513,6 +513,7 @@ USDA_FDC_API_KEY=        # free, api.data.gov signup (server-only)
 GEMINI_API_KEY=          # free tier, Google AI Studio (server-only)
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=   # web push (public by design)
 VAPID_PRIVATE_KEY=              # web push (server-only)
+CRON_SECRET=                    # scheduler → /api/cron/reminders (server-only)
 ```
 
 ## 22. v2 roadmap
@@ -613,7 +614,13 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       `src/lib/swaps.ts`: substitutes must pass allergies (tags + words), other allergies and diet (flags + words); ranked by
       macro-balance similarity (+ same aisle), grams matched to calories (0.25×–4×), max 3. Shown as "Swap ideas" on
       `/recipes/[id]` (not for water, salt or < 5 g). Quality depends on library size.
-- [ ] **Step 31 — Reminders:** web push for meal times (VAPID keys, opt-in).
+- [x] **Step 31 — Reminders:** web push for meal times (VAPID keys, opt-in).
+      Vercel Hobby crons run only daily, so **Supabase pg_cron + pg_net** POSTs `/api/cron/reminders` every 15 min
+      (Bearer CRON_SECRET). Migration 0012: profile reminder times, `push_subscriptions`, `reminder_log` (at most once per
+      meal/day), `private.app_secrets`, secret-checked `claim_due_reminders()` / `remove_push_subscription()` — no
+      service-role key needed. The cron job + secret are in git-ignored `supabase/local/reminders-setup.sql`. Env:
+      `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET` (web-push library). UI on /profile; SW v3 shows
+      notifications. iPhone needs the installed app (iOS 16.4+).
 - [ ] **Step 32 — Household sharing:** invite family, shared plan + live shopping list (Supabase Realtime).
 - [ ] **Step 33 — v2 launch check:** full phone walkthrough online + offline, a11y audit, security/RLS review,
       confirm every service still on a free plan.

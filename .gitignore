@@ -26,3 +26,6 @@ next-env.d.ts
 coverage/
 *.pem
 .pnpm-debug.log*
+
+# Local-only SQL containing secrets (Step 31 reminders)
+supabase/local/

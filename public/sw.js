@@ -7,7 +7,7 @@
 // not be stored), admin pages, form submissions. Signing out deletes the saved pages.
 /* global self, caches, URL, Response */
 
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = "/offline";
@@ -129,4 +129,40 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(savable ? pageNetworkFirst(request, url) : networkOrOfflinePage(request));
   }
   // Everything else (page data for in-app navigation, etc.) goes to the network as normal.
+});
+
+// ---------------------------------------------------------------- meal reminders (Step 31)
+// The server sends { title, body, url, tag }; only our own pages can be opened from a notification.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  const title = typeof data.title === "string" ? data.title.slice(0, 80) : "Meal Planner";
+  const url = typeof data.url === "string" && data.url.startsWith("/") && !data.url.startsWith("//") ? data.url : "/dashboard";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: typeof data.body === "string" ? data.body.slice(0, 200) : "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: typeof data.tag === "string" ? data.tag.slice(0, 40) : "meal",
+      data: { url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/dashboard";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((w) => "focus" in w);
+      if (open) {
+        return open.focus().then((w) => (w && "navigate" in w ? w.navigate(url) : undefined)).catch(() => self.clients.openWindow(url));
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
 });
