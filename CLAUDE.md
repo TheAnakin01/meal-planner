@@ -538,8 +538,13 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       recomputes nutrition/allergens/diets from DB ingredients (browser values never trusted); published recipes must
       have nutrition (DB constraint). Editing an ingredient recalculates every recipe using it. Importer warns when
       kcal is >7% off the macro estimate (fibre counted at 2 kcal/g).
-- [ ] **Step 18 — AI recipe drafting (admin only):** Gemini free key, structured JSON drafts → review → publish;
-      seed ~80 recipes.
+- [x] **Step 18 — AI recipe drafting (admin only):** Gemini free key, structured JSON drafts → review → publish;
+      seed ~80 recipes. (Tool built; seeding ~80 recipes is ongoing owner work.)
+      Findings 2026-09-27: models tried in order `GEMINI_MODELS` in `src/lib/gemini-server.ts` (3.8 Flash often 503
+      "high demand" on free tier → fall back to 3.5 Flash; 2.5 Flash retired); ~20–25 s per draft, so the draft page sets
+      `maxDuration = 120`. Structured output via `generationConfig.responseJsonSchema`. Drafts are matched to library
+      ingredients by name/alias with plural stemming; unmatched ones must be added (or dropped) before saving. Saved as
+      `status=draft, source=ai`; nutrition/allergens/diets always come from our engine, never the AI.
 
 **Phase B — Weekly plan, shopping list, buy online (owner's first priority)**
 - [ ] **Step 19 — Weekly planner engine:** portion scaling, variety, leftovers; tests.

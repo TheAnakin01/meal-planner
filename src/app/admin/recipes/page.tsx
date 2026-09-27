@@ -21,12 +21,20 @@ export default async function AdminRecipesPage() {
         </Link>
         <div className="mt-2 flex items-center justify-between gap-4">
           <h1 className="text-3xl font-bold">Recipes</h1>
-          <Link
-            href="/admin/recipes/new"
-            className="shrink-0 rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800"
-          >
-            New recipe
-          </Link>
+          <div className="flex shrink-0 gap-2">
+            <Link
+              href="/admin/recipes/draft"
+              className="rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800"
+            >
+              Draft with AI
+            </Link>
+            <Link
+              href="/admin/recipes/new"
+              className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            >
+              New
+            </Link>
+          </div>
         </div>
       </div>
 

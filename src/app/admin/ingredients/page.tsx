@@ -19,6 +19,8 @@ export default async function AdminIngredientsPage({ searchParams }: PageProps<"
   const editing = ingredients.find((i) => String(i.id) === params.edit);
   const savedName = typeof params.saved === "string" ? params.saved : null;
   const recipesUpdated = Number(params.recipes ?? 0);
+  // "Add to library" links from the AI drafter pass the ingredient name as ?q=
+  const initialQuery = typeof params.q === "string" ? params.q.slice(0, 80) : "";
   const aisleLabel = (id: string) => AISLES.find((a) => a.id === id)?.label ?? id;
 
   return (
@@ -41,7 +43,7 @@ export default async function AdminIngredientsPage({ searchParams }: PageProps<"
       )}
 
       {/* key: switch cleanly between adding and editing different ingredients */}
-      <IngredientImporter key={editing?.id ?? "new"} editing={editing} />
+      <IngredientImporter key={editing?.id ?? "new"} editing={editing} initialQuery={initialQuery} />
 
       <section aria-labelledby="ingredient-list">
         <h2 id="ingredient-list" className="text-xl font-bold">

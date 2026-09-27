@@ -113,9 +113,9 @@ function draftFromIngredient(i: Ingredient): Draft {
 
 const num = (s: string) => (s.trim() === "" ? NaN : Number(s));
 
-export default function IngredientImporter({ editing }: { editing?: Ingredient }) {
+export default function IngredientImporter({ editing, initialQuery = "" }: { editing?: Ingredient; initialQuery?: string }) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<UsdaFood[] | null>(null);
   const [draft, setDraft] = useState<Draft | null>(editing ? draftFromIngredient(editing) : null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
