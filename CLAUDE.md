@@ -31,7 +31,7 @@ A web app that:
    budget and **strictly exclude the user's allergens**.
 5. Saves the profile (and optionally favourite recipes) in Supabase so the user sees their plan next time.
 
-### Out of scope for v1
+### Out of scope for v1 (see Part 2 for v2)
 Payments, grocery lists, meal logging/tracking, social features, native mobile apps.
 
 ## 2. Tech stack
@@ -355,3 +355,209 @@ git add -A && git commit -m "message" && git push   # save + deploy
 - Pure calculation functions in `src/lib/` with unit tests.
 - Small, focused components; Tailwind for styles; no paid UI kits.
 - Commit messages: short imperative ("Add profile form").
+
+---
+
+# PART 2 — v2 "Advanced" (planned 2026-09-27)
+
+Everything in Part 1 still applies, **especially §0: zero cost, strict allergen safety, secrets never in Git,
+plain-language guidance for the owner.** v2 turns the daily recommender into a weekly planning product for
+**Indian users** (with international recipes too).
+
+## 13. v2 goals
+
+Owner-requested:
+1. **Weekly meal plan (v2 core):** a 7-day breakfast/lunch/dinner plan saved per week, portion-scaled to the user's
+   targets, with "swap this meal" and "regenerate day".
+2. **Shopping list:** built automatically from the week's plan, quantities combined and rounded to what shops sell,
+   grouped by aisle, tick-off as you shop.
+3. **Buy ingredients online:** from any recipe or the shopping list, one tap opens the item's search page on Indian
+   grocery apps (§17).
+4. **Offline-first installable app (PWA):** installs to the home screen, opens and works offline for the user's own
+   data (plan, recipes in our library, shopping list, diary), syncs changes when back online.
+5. **AI nutrition coach:** chat that knows the user's targets, allergies, diet type and week plan; can explain,
+   suggest swaps and draft recipes — never overrides the allergen engine, never gives medical advice.
+
+Add-ons (proposed by Claude to make it stand out):
+6. **Indian diet types:** vegetarian, eggetarian, vegan, Jain (no onion/garlic/root vegetables), non-vegetarian —
+   a first-class filter alongside allergies.
+7. **Pantry ("I already have"):** items in the pantry are subtracted from the shopping list.
+8. **Share list on WhatsApp:** one tap sends the shopping list as text (`https://wa.me/?text=...`).
+9. **Food diary + barcode scan:** log what you actually ate; scan packaged food barcodes via **Open Food Facts**
+   (free, open data) using the phone camera.
+10. **Progress insights:** weight trend, weekly calorie/macro adherence charts, streaks.
+11. **Smart allergen-safe swaps:** "can't find paneer?" → safe substitutes that still fit macros.
+12. **Batch-cook / leftovers mode:** cook dinner once, reuse as next day's lunch (fewer items to buy).
+13. **Meal reminders:** free web push notifications (breakfast/lunch/dinner times).
+14. **Household sharing (later):** family members share one plan and a live shopping list (Supabase Realtime).
+
+Explicitly out of scope: payments, native App Store / Play Store apps (fees break §0), store checkout integrations or
+affiliate programs, storing any Spoonacular data beyond id/title/image.
+
+## 14. Key decisions (2026-09-27)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Recipe source | **Our own recipe library** in Supabase | Spoonacular free terms forbid storing ingredients/nutrition (blocks shopping lists, offline, buy links) and cap us at ~2 weekly plans/day. Own data has no limits and can include Indian dishes. |
+| Nutrition data | **USDA FoodData Central** API (public domain, free key, ~1,000 requests/hour) | We may store it forever. Ingredient nutrition is fetched once and saved to our `ingredients` table. |
+| Packaged food | **Open Food Facts** (free, open data, ODbL — attribution required) | Barcode lookups for the food diary. |
+| Spoonacular | Kept as optional **"Discover"** tab | Same v1 rules: id/title/image only, no caching, ~4 points per view. |
+| Mobile app | **PWA** (web app manifest + service worker via **Serwist**) | Free; same codebase. Next.js 16 has built-in `app/manifest.ts`, web push, and an experimental `useOffline` hook (see `node_modules/next/dist/docs/01-app/02-guides/progressive-web-apps.md` and `offline-support.md`). |
+| AI provider | **Google Gemini API free tier** (current Flash model; confirm exact free model name at build time on ai.google.dev/gemini-api/docs/pricing) | Free, no card. **Free-tier content may be used by Google to improve its products** → strict data minimisation (§18). Claude API was not chosen only because it is paid per use. |
+| Grocery purchase | **Deep links to store search pages** | No APIs, no fees, no accounts. We never place orders or handle payments. |
+
+## 15. Recipe library & nutrition engine
+
+- **Recipes are created by the owner (admin)** in an admin editor, or **drafted by the AI** (§18) and then reviewed
+  and published by the owner. Only `published` recipes are shown to users.
+- Each recipe has ingredients with **quantity in grams or ml** (plus a friendly display amount, e.g. "1 cup").
+- Each ingredient maps to a canonical row in `ingredients`, which stores **per-100 g nutrition from USDA FDC**
+  (`fdc_id`), **allergen tags**, **diet flags** (is_meat, is_fish, is_egg, is_dairy, is_root_veg, is_onion_garlic),
+  shopping aisle, purchase unit (e.g. 500 g pack, 1 L, piece) and a grocery search term.
+- Recipe nutrition per serving = Σ(ingredient grams × per-100 g values) ÷ servings. Computed by pure, unit-tested
+  functions; stored on publish and recomputed when an ingredient's data changes.
+- **Allergen engine v2:** ingredient allergen tags (primary, set by owner/AI and reviewed) **plus** the v1 keyword
+  check over ingredient names and title (backup). Both must pass. Same strictness as §5.3.
+- Seed target for launch: **~80 recipes** (≈ 30 breakfast, 50 lunch/dinner), majority Indian, all diet types covered.
+
+## 16. Weekly planner
+
+- Plan week = Monday–Sunday in the user's timezone. One `meal_plans` row per user per week.
+- Algorithm (pure, deterministic given a seed, unit-tested, runs on the server — **no API cost**):
+  1. Candidate recipes = published ∩ allergen-safe ∩ diet-type-compatible ∩ meal type.
+  2. For each day and meal, pick a recipe and a **portion multiplier (0.5×–2.0×, 0.25 steps)** so calories land
+     within ±10% of the meal target (§5.2 split); prefer recipes whose macro ratio is closest to the user's.
+  3. Variety rules: same recipe at most 2× per week, not on consecutive days (unless leftovers mode), mix cuisines.
+  4. Leftovers mode: dinner portion × 2 with the second portion placed as next day's lunch.
+- User actions: swap one meal (pick next best candidate), lock a meal, regenerate a day, regenerate the week.
+- Daily totals vs targets are shown per day; the v1 dashboard becomes "Today" from the current week's plan.
+
+## 17. Shopping list & buying online
+
+- Generated from the week's plan: Σ(ingredient grams × portion multiplier × servings eaten), combined across meals,
+  minus pantry items, rounded **up** to purchase units (e.g. 730 g rice → "1 kg"), grouped by aisle.
+- Stored in `shopping_list_items` (it is our own data) with `checked` state; user can add custom items.
+- Share: WhatsApp link with the list as plain text; copy to clipboard.
+- **Buy links** (open in a new tab; the item's search term is URL-encoded):
+
+| Store | Search URL pattern |
+|---|---|
+| BigBasket | `https://www.bigbasket.com/ps/?q={term}` |
+| Blinkit | `https://blinkit.com/s/?q={term}` |
+| Zepto | `https://www.zeptonow.com/search?query={term}` |
+| Swiggy Instamart | `https://www.swiggy.com/instamart/search?query={term}` |
+| Amazon.in | `https://www.amazon.in/s?k={term}` |
+| JioMart | `https://www.jiomart.com/search/{term}` |
+
+  The user picks a preferred store in settings (default BigBasket). Checked 2026-09-27: BigBasket and JioMart answer
+  normally; the others block automated checks but open fine in a browser. Re-check the patterns before launch, and
+  keep them in one config file (`src/lib/stores.ts`) so a changed URL is a one-line fix. No affiliate tags.
+
+## 18. AI nutrition coach (Gemini free tier)
+
+- Server-only: `GEMINI_API_KEY` (no `NEXT_PUBLIC_`), called from a route handler / server action.
+- **Opt-in:** the coach is off until the user reads a short notice and turns it on ("Messages are processed by Google
+  Gemini's free service, which may use them to improve Google products. Don't share names, contact details or
+  medical records.").
+- **Data minimisation:** send only age range, goal, calorie/macro targets, diet type, allergy list, this week's
+  meal titles and (if diary enabled) daily totals. **Never** send name, email, user id or exact date of birth.
+- **Grounding:** the coach answers from our data; recipe suggestions must come from our library (the model returns
+  recipe ids, which the server looks up) or be saved as *drafts* for owner review — never shown to users as safe
+  until they pass the allergen engine and are published.
+- **Actions** (function calling, server-validated): swap a meal, add item to shopping list, explain a nutrient.
+  Every action re-checks allergens and ownership on the server.
+- **Safety rules in the system prompt + server checks:** no medical diagnosis or treatment advice; for eating
+  disorders, pregnancy, diabetes, kidney disease, etc. → recommend a professional; never suggest < §5.1 floor calories.
+- **Limits:** per-user daily message cap (e.g. 20) and a global cap well under the free tier's rate limits; friendly
+  message when reached. Chat history kept for 30 days max, deletable by the user.
+- Admin-only **recipe drafting tool**: owner describes a dish → Gemini returns structured JSON (title, servings,
+  ingredients in grams, steps) → our code maps ingredients, fetches USDA nutrition, runs allergen/diet checks → owner
+  edits and publishes.
+
+## 19. Offline-first PWA
+
+- `src/app/manifest.ts` (name, icons, theme colour, `display: "standalone"`), app icons in `public/icons/`.
+- Service worker via **Serwist**: precache the app shell; runtime-cache our own pages and recipe images from our
+  library; **never** cache Spoonacular responses or images (terms).
+- Local data in **IndexedDB**: current + next week's plan, those recipes, shopping list, pantry, recent diary.
+- Offline edits (tick item, log food, swap to a cached candidate) go into an **outbox** and sync when online;
+  conflict rule: last write wins per item, server validates everything.
+- UI shows an "Offline — changes will sync" banner (Next.js `useOffline` hook or `navigator.onLine`).
+- Install prompt on Android/Chrome; "Add to Home Screen" instructions on iPhone.
+
+## 20. v2 data model (new tables; all with Row Level Security "users see only their own rows")
+
+- `profiles` + columns: `diet_type` (veg | eggetarian | vegan | jain | nonveg), `timezone`, `preferred_store`,
+  `leftovers_mode`, `coach_enabled`, `is_admin` (admin can edit the library; set manually by the owner in Supabase).
+- `ingredients` (public read): name, aliases, fdc_id, nutrients per 100 g, allergen_tags[], diet flags, aisle,
+  purchase_unit, grams_per_unit, search_term.
+- `recipes` (public read when published): title, description, cuisine, meal_types[], servings, steps[], image_url,
+  status (draft | published), created_by, nutrition per serving (computed), diet_types[] (computed).
+- `recipe_ingredients`: recipe_id, ingredient_id, grams, display_amount.
+- `meal_plans`: user_id, week_start. `meal_plan_items`: plan_id, day (0–6), meal, recipe_id, portion, locked,
+  is_leftover. (Spoonacular discoveries can be *saved* but not planned — no ingredient data.)
+- `shopping_list_items`: user_id, week_start, ingredient_id (nullable for custom), label, quantity, unit, checked.
+- `pantry_items`: user_id, ingredient_id, note.
+- `food_log`: user_id, eaten_at, recipe_id | off_barcode | custom label, portion, calories, protein, carbs, fat.
+- `weight_log`: user_id, date, weight_kg.
+- `coach_messages`: user_id, role, content, created_at (auto-deleted after 30 days).
+- `push_subscriptions`: user_id, endpoint, keys (for reminders).
+- Admin writes to `ingredients`/`recipes` are allowed only when `profiles.is_admin = true` (RLS policy).
+
+## 21. New environment variables
+
+```
+USDA_FDC_API_KEY=        # free, api.data.gov signup (server-only)
+GEMINI_API_KEY=          # free tier, Google AI Studio (server-only)
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=   # web push (public by design)
+VAPID_PRIVATE_KEY=              # web push (server-only)
+```
+
+## 22. v2 roadmap
+
+Same rules as §9: one step at a time, tests for all logic, commit + push after each, owner clicks guided.
+
+**Phase A — Foundations**
+- [ ] **Step 14 — Diet type & settings:** diet type, preferred store, timezone in profile (migration 0003).
+- [ ] **Step 15 — Library schema:** `ingredients`, `recipes`, `recipe_ingredients` + admin RLS (migration 0004);
+      owner marks themselves admin.
+- [ ] **Step 16 — Nutrition engine:** USDA FDC client (server-only, free key), per-100 g import into `ingredients`,
+      recipe nutrition calculator + allergen engine v2 + diet-type rules, with tests.
+- [ ] **Step 17 — Admin recipe editor:** create/edit/publish recipes, ingredient search, live nutrition preview.
+- [ ] **Step 18 — AI recipe drafting (admin only):** Gemini free key, structured JSON drafts → review → publish;
+      seed ~80 recipes.
+
+**Phase B — Weekly plan, shopping list, buy online (owner's first priority)**
+- [ ] **Step 19 — Weekly planner engine:** portion scaling, variety, leftovers; tests.
+- [ ] **Step 20 — Week view UI:** 7-day plan, daily totals, swap / lock / regenerate, recipe detail page.
+- [ ] **Step 21 — Shopping list:** generation, unit rounding, aisles, tick-off, custom items, pantry.
+- [ ] **Step 22 — Buy online & share:** store links (§17), preferred store, WhatsApp share, copy list.
+- [ ] **Step 23 — Today view:** v1 dashboard reads today's meals from the week plan; Spoonacular moves to "Discover".
+
+**Phase C — Offline-first app**
+- [ ] **Step 24 — Installable PWA:** manifest, icons, install prompt, iPhone instructions.
+- [ ] **Step 25 — Offline data & sync:** Serwist service worker, IndexedDB store, outbox sync, offline banner.
+
+**Phase D — AI coach**
+- [ ] **Step 26 — Coach chat:** opt-in notice, minimised context, safety rules, caps, history deletion.
+- [ ] **Step 27 — Coach actions:** swap meal / add to list via validated function calls.
+
+**Phase E — Add-ons**
+- [ ] **Step 28 — Food diary + barcode:** manual log, recipe log, Open Food Facts barcode scan (with attribution).
+- [ ] **Step 29 — Progress insights:** weight trend, adherence charts, streaks.
+- [ ] **Step 30 — Smart swaps:** allergen-safe substitutions that keep macros close.
+- [ ] **Step 31 — Reminders:** web push for meal times (VAPID keys, opt-in).
+- [ ] **Step 32 — Household sharing:** invite family, shared plan + live shopping list (Supabase Realtime).
+- [ ] **Step 33 — v2 launch check:** full phone walkthrough online + offline, a11y audit, security/RLS review,
+      confirm every service still on a free plan.
+
+## 23. v2 free-plan limits to design around
+
+| Service | Free limit (check before each phase) | Design response |
+|---|---|---|
+| Supabase Free | 500 MB database, 1 GB file storage, pauses after ~1 week idle | Store recipe images as small WebP; no user photo uploads in v2 |
+| Vercel Hobby | Non-commercial use, function time limits | Keep AI calls short; no paid add-ons |
+| USDA FDC | ~1,000 requests/hour per key | Look up each ingredient once; store results |
+| Gemini free | Per-minute and per-day request caps per model | Per-user and global daily caps; graceful "coach is resting" message |
+| Open Food Facts | Fair-use rate limits; attribution | Only on barcode scan; show "Data from Open Food Facts" |
+| Spoonacular Free | 50 points/day; strict storage terms | "Discover" tab only; id/title/image saved |
