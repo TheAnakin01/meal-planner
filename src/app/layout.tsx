@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import BottomNavSlot from "@/components/BottomNavSlot";
 import OfflineSupport from "@/components/OfflineSupport";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
@@ -25,8 +26,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#047857" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f7f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
   ],
 };
 
@@ -40,15 +41,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         <OfflineSupport />
         {children}
-        <footer className="border-t border-zinc-200 dark:border-zinc-800">
+        <footer>
           {/* Backlink required by the Spoonacular free plan (CLAUDE.md §4.3). */}
-          <p className="mx-auto w-full max-w-3xl px-4 py-4 text-xs text-zinc-600 dark:text-zinc-400">
+          <p className="mx-auto w-full max-w-3xl px-4 pb-6 text-center text-xs text-zinc-600 dark:text-zinc-400">
             Recipes powered by{" "}
             <a href="https://spoonacular.com/food-api" className="underline hover:text-zinc-700 dark:hover:text-zinc-300">
               spoonacular
             </a>
           </p>
         </footer>
+        <BottomNavSlot />
       </body>
     </html>
   );

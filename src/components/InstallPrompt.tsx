@@ -70,7 +70,7 @@ export default function InstallPrompt() {
   if (hidden || (!installEvent && !showIosHelp)) return null;
 
   return (
-    <aside aria-label="Install the app" className="rounded-xl border border-emerald-700 bg-emerald-50 p-4 text-sm dark:bg-emerald-950">
+    <aside aria-label="Install the app" className="card border-emerald-200 bg-gradient-to-br from-emerald-50 to-white text-sm motion-safe:animate-fade-up dark:border-emerald-900 dark:from-emerald-950 dark:to-zinc-900">
       <p className="font-semibold">Get Meal Planner on your home screen</p>
       {installEvent ? (
         <p className="mt-1">Opens full-screen like a normal app — no app store needed.</p>
@@ -84,7 +84,7 @@ export default function InstallPrompt() {
           <button
             type="button"
             onClick={install}
-            className="rounded-xl bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800"
+            className="btn btn-primary"
           >
             Install app
           </button>
@@ -92,7 +92,7 @@ export default function InstallPrompt() {
         <button
           type="button"
           onClick={dismiss}
-          className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold hover:bg-white dark:border-zinc-700 dark:hover:bg-zinc-900"
+          className="btn btn-secondary"
         >
           Not now
         </button>

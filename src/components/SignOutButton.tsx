@@ -16,7 +16,7 @@ async function forgetOfflineData() {
   }
 }
 
-export default function SignOutButton() {
+export default function SignOutButton({ className }: { className?: string }) {
   return (
     <form
       action={async () => {
@@ -26,7 +26,10 @@ export default function SignOutButton() {
     >
       <button
         type="submit"
-        className="rounded-lg border border-zinc-300 px-2 py-2 text-sm font-medium hover:bg-zinc-100 sm:px-3 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        className={
+          className ??
+          "rounded-lg border border-zinc-300 px-2 py-2 text-sm font-medium hover:bg-zinc-100 sm:px-3 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        }
       >
         Sign out
       </button>

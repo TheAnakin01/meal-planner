@@ -9,6 +9,7 @@ import {
   swapMealAction,
   toggleLockAction,
 } from "@/app/week/actions";
+import { LockIcon, MEAL_STYLE, MealIcon, ShuffleIcon, iconButton, servingsText } from "@/components/meal-ui";
 import ProgressRing, { useCountUp } from "@/components/week/ProgressRing";
 import type { Nutrients } from "@/lib/library";
 import type { MealType } from "@/lib/nutrition";
@@ -40,84 +41,6 @@ interface WeekViewProps {
 }
 
 type ActionResult = { ok: true; notes?: string[] } | { ok: false; error: string };
-
-// Each meal has its own colour and time-of-day icon. Colour is decoration only; text stays in text colours.
-const MEAL_STYLE: Record<MealType, { label: string; stripe: string; badge: string }> = {
-  breakfast: {
-    label: "Breakfast",
-    stripe: "bg-amber-400",
-    badge: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  },
-  lunch: {
-    label: "Lunch",
-    stripe: "bg-emerald-500",
-    badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  },
-  dinner: {
-    label: "Dinner",
-    stripe: "bg-indigo-400",
-    badge: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300",
-  },
-};
-
-const iconProps = {
-  width: 20,
-  height: 20,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 2,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true,
-};
-
-function MealIcon({ meal }: { meal: MealType }) {
-  if (meal === "breakfast") {
-    // Sunrise
-    return (
-      <svg {...iconProps}>
-        <path d="M12 3v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M3 18h18M7 18a5 5 0 0 1 10 0" />
-      </svg>
-    );
-  }
-  if (meal === "lunch") {
-    // Sun
-    return (
-      <svg {...iconProps}>
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-      </svg>
-    );
-  }
-  // Moon
-  return (
-    <svg {...iconProps}>
-      <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" />
-    </svg>
-  );
-}
-
-function ShuffleIcon({ spinning }: { spinning: boolean }) {
-  return (
-    <svg {...iconProps} className={spinning ? "motion-safe:animate-spin" : ""}>
-      <path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5" />
-    </svg>
-  );
-}
-
-function LockIcon({ locked }: { locked: boolean }) {
-  return (
-    <svg {...iconProps}>
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      {locked ? <path d="M8 11V8a4 4 0 0 1 8 0v3" /> : <path d="M8 11V8a4 4 0 0 1 7.5-2" />}
-    </svg>
-  );
-}
-
-const servingsText = (p: number) => `${p} serving${p === 1 ? "" : "s"}`;
-const iconButton =
-  "grid h-10 w-10 place-items-center rounded-full text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 active:scale-90 disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100";
 
 export default function WeekView({ days, targetKcal, targetProteinG, leftovers, notes }: WeekViewProps) {
   const [pending, startTransition] = useTransition();

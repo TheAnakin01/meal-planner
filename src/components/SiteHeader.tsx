@@ -1,51 +1,34 @@
 import Link from "next/link";
-import SignOutButton from "@/components/SignOutButton";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
-
-async function getSignedInEmail(): Promise<string | null> {
-  if (!isSupabaseConfigured) return null;
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const claims = data?.claims;
-  if (!claims) return null;
-  return typeof claims.email === "string" ? claims.email : "Signed in";
-}
+import { DesktopNav } from "@/components/AppNav";
+import { LeafIcon, UserIcon } from "@/components/ui/icons";
+import { getSessionInfo } from "@/lib/session-server";
 
 export default async function SiteHeader() {
-  const email = await getSignedInEmail();
+  const session = await getSessionInfo();
 
   return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800">
+    <header className="sticky top-0 z-30 border-b border-zinc-200/70 bg-[var(--background)]/80 backdrop-blur-xl dark:border-zinc-800/70">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="shrink-0 whitespace-nowrap font-bold text-emerald-700 dark:text-emerald-400">
-          Meal Planner
+        <Link href={session ? "/dashboard" : "/"} className="group flex shrink-0 items-center gap-2 font-bold tracking-tight">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-900/20 transition group-hover:rotate-6">
+            <LeafIcon size={18} />
+          </span>
+          <span>Meal Planner</span>
         </Link>
 
-        {email ? (
-          <div className="flex min-w-0 items-center gap-1 sm:gap-3">
+        {session ? (
+          <div className="flex items-center gap-2">
+            <DesktopNav email={session.email} isAdmin={session.isAdmin} />
             <Link
-              href="/dashboard"
-              className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 sm:px-3 dark:text-emerald-300 dark:hover:bg-emerald-950"
+              href="/profile"
+              aria-label="Your profile"
+              className="grid h-9 w-9 place-items-center rounded-full bg-emerald-100 text-sm font-bold uppercase text-emerald-800 transition hover:ring-4 hover:ring-emerald-600/15 dark:bg-emerald-900/60 dark:text-emerald-200"
             >
-              Today
+              {session.email ? session.email[0] : <UserIcon size={18} />}
             </Link>
-            <Link
-              href="/week"
-              className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 sm:px-3 dark:text-emerald-300 dark:hover:bg-emerald-950"
-            >
-              Week
-            </Link>
-            <span className="hidden truncate text-sm text-zinc-600 sm:inline dark:text-zinc-400">
-              {email}
-            </span>
-            <SignOutButton />
           </div>
         ) : (
-          <Link
-            href="/login"
-            className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 sm:px-3 dark:text-emerald-300 dark:hover:bg-emerald-950"
-          >
+          <Link href="/login" className="btn btn-dark py-2">
             Sign in
           </Link>
         )}
