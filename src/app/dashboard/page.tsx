@@ -39,6 +39,9 @@ export default async function DashboardPage() {
         <Link href="/week" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
           This week&apos;s meal plan →
         </Link>
+        <Link href="/shopping" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+          Shopping list →
+        </Link>
         {isAdmin && (
           <Link href="/admin" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
             Recipe library (admin) →

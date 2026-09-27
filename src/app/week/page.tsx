@@ -52,12 +52,20 @@ export default async function WeekPage() {
     <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 sm:py-12">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">This week</h1>
-        <Link
-          href="/dashboard"
-          className="shrink-0 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Today
-        </Link>
+        <div className="flex shrink-0 gap-2">
+          <Link
+            href="/shopping"
+            className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+          >
+            Shopping list
+          </Link>
+          <Link
+            href="/dashboard"
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          >
+            Today
+          </Link>
+        </div>
       </div>
       <WeekView
         days={days}
