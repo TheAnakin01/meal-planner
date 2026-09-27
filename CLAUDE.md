@@ -61,12 +61,12 @@ Meal_Planner/
 ├── package.json
 ├── next.config.ts
 ├── tsconfig.json
-├── middleware.ts              # refreshes Supabase session, protects /dashboard & /profile
 ├── public/                    # icons, logo, favicon
 ├── supabase/
 │   └── migrations/
 │       └── 0001_init.sql      # tables + Row Level Security policies (§6)
 ├── src/
+│   ├── proxy.ts               # (Next 16 name for middleware) refreshes Supabase session, protects /dashboard & /profile
 │   ├── app/
 │   │   ├── layout.tsx         # root layout, fonts, mobile viewport
 │   │   ├── page.tsx           # landing page
@@ -298,9 +298,9 @@ Each step ends with a commit + push. Tick boxes as you go.
       Add `.env.example`, README. Confirm `npm run dev` shows the page at http://localhost:3000.
 - [x] **Step 2 — Deploy early:** connect repo to Vercel (Hobby). Confirm the live URL works.
 - [x] **Step 3 — Nutrition logic:** `src/lib/nutrition.ts` + Vitest unit tests (§5.1, §5.2).
-- [ ] **Step 4 — Profile form (no login yet):** form + zod validation; show calories/macros instantly on screen.
+- [x] **Step 4 — Profile form (no login yet):** form + zod validation; show calories/macros instantly on screen.
 - [ ] **Step 5 — Supabase:** create free project, run migration, add env vars locally and on Vercel,
-      add Supabase clients + `middleware.ts`.
+      add Supabase clients + `src/proxy.ts` (Next.js 16 renamed middleware to proxy).
 - [ ] **Step 6 — Auth:** login/sign-up pages, callback route, protect `/profile` and `/dashboard`, sign-out button.
 - [ ] **Step 7 — Save profile:** load/save profile from Supabase; redirect new users to `/profile`.
 - [ ] **Step 8 — Edamam integration:** sign up (free), `src/lib/edamam.ts`, `/api/recipes` route, caching, error handling.

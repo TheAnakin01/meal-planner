@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const features = [
   {
     title: "Your daily target",
@@ -27,13 +29,12 @@ export default function Home() {
         suggestions.
       </p>
 
-      <button
-        type="button"
-        disabled
-        className="mt-8 w-full rounded-xl bg-emerald-600 px-6 py-4 text-lg font-semibold text-white opacity-60 sm:w-auto"
+      <Link
+        href="/profile"
+        className="mt-8 block w-full rounded-xl bg-emerald-600 px-6 py-4 text-center text-lg font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-600/40 sm:inline-block sm:w-auto"
       >
-        Get started (coming soon)
-      </button>
+        Get started
+      </Link>
 
       <ul className="mt-12 grid gap-4 sm:grid-cols-3">
         {features.map((f) => (
