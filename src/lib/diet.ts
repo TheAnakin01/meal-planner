@@ -21,18 +21,18 @@ export function dietLabel(id: DietType): string {
   return DIET_TYPES.find((d) => d.id === id)?.label ?? id;
 }
 
-const MEAT = [
+export const MEAT_WORDS = [
   "meat", "chicken", "beef", "pork", "lamb", "mutton", "goat meat", "veal", "venison", "turkey", "duck", "goose",
   "bacon", "ham", "prosciutto", "pancetta", "sausage", "chorizo", "pepperoni", "salami", "hot dog", "meatball",
   "keema", "kheema", "steak", "mince", "ground beef", "ground turkey", "rabbit", "liver", "gelatin", "gelatine",
   "lard", "tallow", "suet", "bone broth", "chicken stock", "beef stock",
 ];
-const JAIN_AVOID = [
+export const JAIN_AVOID_WORDS = [
   "onion", "shallot", "scallion", "spring onion", "green onion", "leek", "chive", "garlic", "potato",
   "sweet potato", "carrot", "beetroot", "beet", "radish", "turnip", "ginger", "yam", "taro", "cassava",
   "arrowroot", "mushroom", "honey",
 ];
-const HONEY = ["honey"];
+export const HONEY_WORDS = ["honey"];
 
 interface DietRule {
   meat: boolean; // meat must be absent
@@ -62,14 +62,14 @@ const RULES: Record<DietType, DietRule> = {
   vegan: {
     meat: true,
     allergens: [...NO_FISH, "egg-free", "dairy-free"],
-    extraWords: HONEY,
+    extraWords: HONEY_WORDS,
     spoonacularDiet: "vegan",
     spoonacularExcludes: [],
   },
   jain: {
     meat: true,
     allergens: [...NO_FISH, "egg-free"],
-    extraWords: JAIN_AVOID,
+    extraWords: JAIN_AVOID_WORDS,
     spoonacularDiet: "vegetarian",
     spoonacularExcludes: ["egg", "onion", "garlic", "potato", "carrot", "mushroom"],
   },
@@ -100,7 +100,7 @@ export function checkRecipeDiet(
   if (rule.spoonacularDiet === "vegan" && recipe.vegan === false) reasons.push("not vegan: flagged by Spoonacular");
 
   if (rule.meat) {
-    const hit = findWordHit(recipe, MEAT);
+    const hit = findWordHit(recipe, MEAT_WORDS);
     if (hit) reasons.push(`meat: "${hit}"`);
   }
   for (const id of rule.allergens) {

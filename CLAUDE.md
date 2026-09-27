@@ -526,8 +526,13 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       type are sent to /profile to choose one (never assumed).
 - [x] **Step 15 — Library schema:** `ingredients`, `recipes`, `recipe_ingredients` + admin RLS (migration 0004);
       owner marks themselves admin.
-- [ ] **Step 16 — Nutrition engine:** USDA FDC client (server-only, free key), per-100 g import into `ingredients`,
+- [x] **Step 16 — Nutrition engine:** USDA FDC client (server-only, free key), per-100 g import into `ingredients`,
       recipe nutrition calculator + allergen engine v2 + diet-type rules, with tests.
+      Findings 2026-09-27: use **POST** `/foods/search` (GET with `dataType=Survey (FNDDS)` intermittently returned an
+      HTML 400); include **Survey (FNDDS)** — it has paneer, besan, ghee; energy may only exist as Atwater 958/957;
+      USDA values for Indian foods can be off (FNDDS paneer lists 22 g carbs/100 g), so the importer lets the owner
+      edit numbers. Rate limit seen: 3,600 requests/hour. Code: `usda.ts`, `usda-server.ts`, `recipe-analysis.ts`,
+      `ingredient-input.ts`, admin page `/admin/ingredients`.
 - [ ] **Step 17 — Admin recipe editor:** create/edit/publish recipes, ingredient search, live nutrition preview.
 - [ ] **Step 18 — AI recipe drafting (admin only):** Gemini free key, structured JSON drafts → review → publish;
       seed ~80 recipes.

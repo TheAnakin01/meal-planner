@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isCurrentUserAdmin } from "@/lib/admin-server";
 import { createClient } from "@/lib/supabase/server";
@@ -49,8 +50,15 @@ export default async function AdminPage() {
         ))}
       </dl>
 
+      <Link
+        href="/admin/ingredients"
+        className="mt-8 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800"
+      >
+        Manage ingredients
+      </Link>
+
       <p className="mt-8 rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
-        Coming next: importing ingredient nutrition from USDA (Step 16) and the recipe editor (Step 17).
+        Coming next: the recipe editor (Step 17).
       </p>
     </main>
   );
