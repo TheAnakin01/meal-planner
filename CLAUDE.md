@@ -8,13 +8,13 @@
 ## 0. Ground rules (read first)
 
 1. **Zero cost, always.** The owner has ordered that no money is spent and nothing is purchased.
-   - Use only free tiers: GitHub Free, Vercel **Hobby**, Supabase **Free**, Edamam free/developer plan.
+   - Use only free tiers: GitHub Free, Vercel **Hobby**, Supabase **Free**, Spoonacular **Free** (signed up on spoonacular.com, not RapidAPI).
    - **Never** enter a credit card, never click "Upgrade", "Pro", "Start trial" or anything that needs payment details.
    - If a service asks for a card or has no free tier, **stop and tell the owner**, then switch to a free alternative
      (see §4.4 fallback), rather than paying.
    - Don't add paid npm packages, paid fonts or paid image services.
 2. **The owner has zero coding knowledge.** Explain every step in plain language. When something must be clicked in a
-   website (GitHub, Supabase, Vercel, Edamam), give numbered click-by-click instructions.
+   website (GitHub, Supabase, Vercel, Spoonacular), give numbered click-by-click instructions.
 3. **Secrets never go in Git.** API keys live only in `.env.local` (local) and in Vercel's Environment Variables
    (production). `.env*.local` is git-ignored.
 4. **Allergen safety is strict.** A recipe that might contain a user's allergen must never be shown (see §5.3).
@@ -27,7 +27,7 @@ A web app that:
 1. Lets a user sign up / log in (email + password or magic link) via Supabase Auth.
 2. Collects a profile: **age, weight, height, gender, activity level, goal (lose / maintain / gain), allergies**.
 3. Calculates **daily calorie target** and **macros** (protein, carbs, fat in grams).
-4. Recommends **breakfast, lunch and dinner** recipes from the **Edamam Recipe Search API** that fit the calorie
+4. Recommends **breakfast, lunch and dinner** recipes from the **Spoonacular Food API** that fit the calorie
    budget and **strictly exclude the user's allergens**.
 5. Saves the profile (and optionally favourite recipes) in Supabase so the user sees their plan next time.
 
@@ -42,7 +42,7 @@ Payments, grocery lists, meal logging/tracking, social features, native mobile a
 | Styling          | Tailwind CSS                                    | Free              |
 | Forms/validation | `zod` (+ React Hook Form optional)              | Free              |
 | Auth + Database  | Supabase (Postgres + Auth), `@supabase/ssr`, `@supabase/supabase-js` | Free tier |
-| Recipes          | Edamam Recipe Search API v2                     | Free dev plan (verify) |
+| Recipes          | Spoonacular Food API (`recipes/complexSearch`)  | Free (50 points/day) |
 | Hosting          | Vercel Hobby plan, auto-deploy from GitHub      | Free              |
 | Source control   | Git + GitHub (public or private repo)           | Free              |
 | Tests            | Vitest (unit tests for calculations & allergen filter) | Free       |
@@ -74,9 +74,7 @@ Meal_Planner/
 │   │   ├── login/page.tsx     # sign in / sign up
 │   │   ├── auth/callback/route.ts   # Supabase email-link callback
 │   │   ├── profile/page.tsx   # profile form (age, weight, ...)
-│   │   ├── dashboard/page.tsx # calories, macros, 3 meal recommendations
-│   │   └── api/
-│   │       └── recipes/route.ts     # server-side proxy to Edamam (keeps keys secret)
+│   │   └── dashboard/page.tsx # calories, macros, meal recommendations (fetches recipes server-side)
 │   ├── components/
 │   │   ├── ProfileForm.tsx
 │   │   ├── MacroSummary.tsx
@@ -85,8 +83,8 @@ Meal_Planner/
 │   │   └── ui/                # Button, Input, Select, Card, Spinner...
 │   ├── lib/
 │   │   ├── nutrition.ts       # BMR / TDEE / calorie & macro maths (§5.1, §5.2)
-│   │   ├── allergens.ts       # allergy list, Edamam label mapping, ingredient keyword check (§5.3)
-│   │   ├── edamam.ts          # Edamam request builder + response parsing
+│   │   ├── allergens.ts       # allergy list, Spoonacular mapping, ingredient keyword check (§5.3)
+│   │   ├── recipes.ts         # Spoonacular request builder, response parsing, caching (server-only)
 │   │   ├── validation.ts      # zod schemas for the profile form
 │   │   └── supabase/
 │   │       ├── client.ts      # browser client
@@ -112,17 +110,19 @@ Meal_Planner/
 - Note: free projects pause after ~1 week of no activity; just click "Restore" in the dashboard (free).
 - **Project URL:** https://objczgfykwqthlcpgyyz.supabase.co (migration 0001 applied; Site URL + redirect URLs set for localhost:3000 and the Vercel URL).
 
-### 4.3 Edamam (Recipe Search API)
-1. developer.edamam.com → Sign up → choose the **free / Developer** Recipe Search plan.
-   **If every plan requires a card or payment, STOP** and use the fallback in §4.4.
-2. Dashboard → Applications → create app → copy **Application ID** and **Application Key**.
-3. Free plans have rate limits (roughly ~10 requests/minute). The app must cache results (§5.4) and handle HTTP 429.
-4. Edamam's free-plan terms require showing **"Powered by Edamam"** attribution — add it to the footer.
+### 4.3 Spoonacular (recipe API)
+1. spoonacular.com/food-api/console → sign up **directly on spoonacular.com** (NOT via RapidAPI — RapidAPI asks for a
+   card and can bill overages). The **Free** plan needs no card.
+2. Console → **Profile** → copy the **API key** into `.env.local` and Vercel as `SPOONACULAR_API_KEY`.
+3. Free plan limits: **50 points/day** (resets midnight UTC), 1 request/second. When used up the API returns
+   **HTTP 402** until reset — it never charges. Each meal search costs ≈ 2.2 points (§5.4), so ≈ 7 fresh plans/day.
+4. Terms: a **backlink to spoonacular is required** on the free plan (footer: "Recipes powered by spoonacular");
+   API data may be cached for **at most 1 hour**.
 
-### 4.4 Fallback if Edamam has no free option
-Keep all Edamam code inside `src/lib/edamam.ts` behind a `searchRecipes()` function so the provider can be swapped.
-Free alternatives: Spoonacular free tier (daily point limit, no card) or TheMealDB (free, no nutrition data — would need
-our own calorie estimates). Ask the owner before switching.
+### 4.4 Why not Edamam (decision, 2026-09-27)
+The original spec used Edamam. Checked developer.edamam.com on 2026-09-27: **no free plan** (cheapest is $9/month,
+prepaid), which breaks rule §0.1. The owner chose Spoonacular's free plan. TheMealDB was rejected (no nutrition data or
+allergy labels). All provider code lives in `src/lib/recipes.ts` so it can be swapped later.
 
 ### 4.5 Vercel (Hobby plan)
 1. vercel.com → Continue with GitHub → **Hobby** (free) → Import the `meal-planner` repo.
@@ -171,58 +171,58 @@ Meal split of daily calories: **breakfast 25%, lunch 35%, dinner 40%**. For each
 calories **per serving** are within ±15% of that meal's target.
 
 ### 5.3 Allergen handling (STRICT — two layers)
-Supported allergies (checkbox list) → Edamam `health` label:
+Supported allergies (checkbox list). The stored ID (in `profiles.allergies`) is kept from the original Edamam-based
+design; `allergens.ts` maps each to Spoonacular:
 
-| Allergy     | Edamam `health` param |
-|-------------|-----------------------|
-| Peanuts     | `peanut-free`         |
-| Tree nuts   | `tree-nut-free`       |
-| Dairy/milk  | `dairy-free`          |
-| Eggs        | `egg-free`            |
-| Soy         | `soy-free`            |
-| Wheat       | `wheat-free`          |
-| Gluten      | `gluten-free`         |
-| Fish        | `fish-free`           |
-| Shellfish   | `shellfish-free`      |
-| Crustaceans | `crustacean-free`     |
-| Molluscs    | `mollusk-free`        |
-| Sesame      | `sesame-free`         |
-| Mustard     | `mustard-free`        |
-| Celery      | `celery-free`         |
-| Lupin       | `lupine-free`         |
-| Sulphites   | `sulfite-free`        |
+| Allergy     | Stored ID          | Spoonacular `intolerances` | Spoonacular `excludeIngredients` |
+|-------------|--------------------|----------------------------|----------------------------------|
+| Peanuts     | `peanut-free`      | `peanut`                   |                                  |
+| Tree nuts   | `tree-nut-free`    | `tree nut`                 |                                  |
+| Dairy/milk  | `dairy-free`       | `dairy`                    |                                  |
+| Eggs        | `egg-free`         | `egg`                      |                                  |
+| Soy         | `soy-free`         | `soy`                      |                                  |
+| Wheat       | `wheat-free`       | `wheat`                    |                                  |
+| Gluten      | `gluten-free`      | `gluten`                   |                                  |
+| Fish        | `fish-free`        | `seafood`                  |                                  |
+| Shellfish   | `shellfish-free`   | `shellfish`                |                                  |
+| Crustaceans | `crustacean-free`  | `shellfish`                |                                  |
+| Molluscs    | `mollusk-free`     | `shellfish`                |                                  |
+| Sesame      | `sesame-free`      | `sesame`                   |                                  |
+| Mustard     | `mustard-free`     | —                          | `mustard`                        |
+| Celery      | `celery-free`      | —                          | `celery,celeriac`                |
+| Lupin       | `lupine-free`      | —                          | `lupin,lupine`                   |
+| Sulphites   | `sulfite-free`     | `sulfite`                  |                                  |
 
 Plus a free-text "Other allergies" field (comma-separated words, e.g. "kiwi, strawberry").
 
-1. **Layer 1 (API filter):** send every selected label as repeated `health=` params, and free-text items via
-   `excluded=` params.
+1. **Layer 1 (API filter):** send the mapped `intolerances` and `excludeIngredients` (including free-text allergies).
 2. **Layer 2 (our own double-check, server-side):** after results come back, reject any recipe where
-   - its `healthLabels` is missing any required label, **or**
-   - any `ingredientLines` / `ingredients[].food` contains a keyword from that allergen's keyword list in
+   - a Spoonacular flag contradicts the allergy (e.g. dairy selected but `dairyFree` is false; gluten/wheat selected
+     but `glutenFree` is false), **or**
+   - any ingredient name (`nutrition.ingredients[].name`) or the recipe title contains a keyword from that allergen's keyword list in
      `allergens.ts` (e.g. dairy → milk, butter, cheese, cream, yogurt, whey, casein, ghee; wheat → flour, bread, pasta,
      couscous, semolina...; case-insensitive, word match), or any free-text allergy word.
 3. If no safe recipes remain for a meal, show "No safe recipes found — try again" rather than an unsafe one.
 4. Unit tests in `tests/allergens.test.ts` must prove unsafe recipes are removed.
 5. UI disclaimer: "Always check ingredient labels; data comes from third parties."
 
-### 5.4 Edamam request (server-side only, `src/app/api/recipes/route.ts`)
+### 5.4 Spoonacular request (server-side only, `src/lib/recipes.ts`, called from the dashboard page)
 ```
-GET https://api.edamam.com/api/recipes/v2
-  ?type=public
-  &app_id=$EDAMAM_APP_ID&app_key=$EDAMAM_APP_KEY
-  &mealType=Breakfast|Lunch|Dinner
-  &calories=MIN-MAX                (total recipe calories; convert per-serving using yield — filter again locally)
-  &health=peanut-free&health=...   (one per allergy)
-  &excluded=kiwi&excluded=...
-  &random=true
-  &field=label&field=image&field=url&field=yield&field=calories&field=totalNutrients
-  &field=healthLabels&field=ingredientLines&field=ingredients&field=mealType
-Header (if the account requires it): Edamam-Account-User: <supabase user id>
+GET https://api.spoonacular.com/recipes/complexSearch
+  ?apiKey=$SPOONACULAR_API_KEY          (server-only env var; never sent to the browser)
+  &type=breakfast | main course         (lunch and dinner both use "main course")
+  &minCalories=MIN&maxCalories=MAX      (per serving, ±15% of the meal target)
+  &intolerances=peanut,dairy,...        (mapped, §5.3)
+  &excludeIngredients=mustard,kiwi,...  (mapped + free-text allergies)
+  &addRecipeNutrition=true              (per-serving nutrients + ingredient names; implies addRecipeInformation)
+  &sort=random&number=6
 ```
-- Compute per-serving calories/protein/carbs/fat = total ÷ `yield`; keep those within the meal target range.
-- Return 3 options per meal; user can tap "Show another" to swap.
-- Cache responses in memory/Next.js fetch cache for ~1 hour per unique query to stay under free rate limits.
-- Handle errors: 401 (bad keys), 429 (rate limit → friendly "please wait a minute"), network failure.
+- Points per meal search: 1 + 1 (nutrient filter) + 6 × (0.01 + 0.025) ≈ **2.2**; a full plan ≈ 6.6 of the 50/day.
+- Fetch a **pool of 6 per meal** in one call; the UI shows a few and "Show another" rotates through the pool
+  (no extra API calls).
+- Cache each unique query for **1 hour** (`fetch` with `next: { revalidate: 3600 }`) — the maximum Spoonacular allows.
+- Handle errors: 401 (bad key), **402 (daily points used up → "Recipe limit reached for today, try again after
+  midnight UTC")**, 429 (too fast), network failure. Never show a recipe that failed the §5.3 checks.
 
 ## 6. Database (Supabase Postgres)
 
@@ -273,10 +273,9 @@ Calories/macros are **calculated on the fly** from the profile (not stored), so 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-EDAMAM_APP_ID=
-EDAMAM_APP_KEY=
+SPOONACULAR_API_KEY=
 ```
-Edamam keys must **not** have the `NEXT_PUBLIC_` prefix (keeps them server-only).
+The Spoonacular key must **not** have the `NEXT_PUBLIC_` prefix (keeps it server-only).
 
 ## 8. Pages & UX
 
@@ -304,9 +303,9 @@ Each step ends with a commit + push. Tick boxes as you go.
       add Supabase clients + `src/proxy.ts` (Next.js 16 renamed middleware to proxy).
 - [x] **Step 6 — Auth:** login/sign-up pages, callback route, protect `/profile` and `/dashboard`, sign-out button.
 - [x] **Step 7 — Save profile:** load/save profile from Supabase; redirect new users to `/profile`.
-- [ ] **Step 8 — Edamam integration:** sign up (free), `src/lib/edamam.ts`, `/api/recipes` route, caching, error handling.
+- [ ] **Step 8 — Recipe API (Spoonacular):** sign up (free, no card), `src/lib/recipes.ts`, caching, error handling.
 - [ ] **Step 9 — Allergen safety:** `src/lib/allergens.ts`, two-layer filtering, unit tests (§5.3).
-- [ ] **Step 10 — Dashboard UI:** macro summary, meal sections, recipe cards, "Show another", Edamam attribution.
+- [ ] **Step 10 — Dashboard UI:** macro summary, meal sections, recipe cards, "Show another", spoonacular backlink.
 - [ ] **Step 11 — Saved recipes (optional):** heart button → `saved_recipes` table, "My saved recipes" list.
 - [ ] **Step 12 — Polish:** mobile testing (360px, 768px), accessibility, loading/empty/error states, disclaimers.
 - [ ] **Step 13 — Launch check:** add Vercel URL to Supabase redirect URLs, test sign-up → profile → plan on a phone,
