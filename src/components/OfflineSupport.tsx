@@ -17,6 +17,26 @@ function savePagesForOffline(pathname: string) {
     .catch(() => {});
 }
 
+// An installed app can stay open for days on old code. When the app comes back to the screen, check
+// whether a newer version is live and, if so, reload once (never while the person is typing).
+async function reloadIfNewVersion() {
+  const loaded = process.env.NEXT_PUBLIC_BUILD_ID;
+  if (process.env.NODE_ENV !== "production" || !loaded || loaded === "dev" || !navigator.onLine) return;
+  const active = document.activeElement;
+  if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement) return;
+  try {
+    const res = await fetch("/api/version", { cache: "no-store" });
+    const { build } = (await res.json()) as { build?: string };
+    if (!build || build === "dev" || build === loaded) return;
+    const flag = `reloaded-for-${build}`;
+    if (sessionStorage.getItem(flag)) return; // already tried once for this version
+    sessionStorage.setItem(flag, "1");
+    window.location.reload();
+  } catch {
+    // Offline or storage blocked: try again next time.
+  }
+}
+
 // Registers the service worker (production only — it would fight with hot reloading in development)
 // and shows a banner while the phone has no internet.
 export default function OfflineSupport() {
@@ -36,6 +56,12 @@ export default function OfflineSupport() {
       });
     }
 
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void reloadIfNewVersion();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const versionTimer = setTimeout(() => void reloadIfNewVersion(), 3000);
+
     const update = () => setOffline(!navigator.onLine);
     update();
     window.addEventListener("online", update);
@@ -43,6 +69,8 @@ export default function OfflineSupport() {
     return () => {
       window.removeEventListener("online", update);
       window.removeEventListener("offline", update);
+      document.removeEventListener("visibilitychange", onVisible);
+      clearTimeout(versionTimer);
     };
   }, []);
 
