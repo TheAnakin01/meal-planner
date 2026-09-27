@@ -110,6 +110,7 @@ Meal_Planner/
 3. SQL Editor → run `supabase/migrations/0001_init.sql`.
 4. Authentication → URL Configuration → add `http://localhost:3000` and the Vercel URL to Redirect URLs.
 - Note: free projects pause after ~1 week of no activity; just click "Restore" in the dashboard (free).
+- **Project URL:** https://objczgfykwqthlcpgyyz.supabase.co (migration 0001 applied; Site URL + redirect URLs set for localhost:3000 and the Vercel URL).
 
 ### 4.3 Edamam (Recipe Search API)
 1. developer.edamam.com → Sign up → choose the **free / Developer** Recipe Search plan.
@@ -299,7 +300,7 @@ Each step ends with a commit + push. Tick boxes as you go.
 - [x] **Step 2 — Deploy early:** connect repo to Vercel (Hobby). Confirm the live URL works.
 - [x] **Step 3 — Nutrition logic:** `src/lib/nutrition.ts` + Vitest unit tests (§5.1, §5.2).
 - [x] **Step 4 — Profile form (no login yet):** form + zod validation; show calories/macros instantly on screen.
-- [ ] **Step 5 — Supabase:** create free project, run migration, add env vars locally and on Vercel,
+- [x] **Step 5 — Supabase:** create free project, run migration, add env vars locally and on Vercel,
       add Supabase clients + `src/proxy.ts` (Next.js 16 renamed middleware to proxy).
 - [ ] **Step 6 — Auth:** login/sign-up pages, callback route, protect `/profile` and `/dashboard`, sign-out button.
 - [ ] **Step 7 — Save profile:** load/save profile from Supabase; redirect new users to `/profile`.
