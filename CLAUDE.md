@@ -127,6 +127,7 @@ our own calorie estimates). Ask the owner before switching.
 1. vercel.com → Continue with GitHub → **Hobby** (free) → Import the `meal-planner` repo.
 2. Add environment variables (§7) in Project → Settings → Environment Variables.
 3. Every `git push` to `main` auto-deploys. Never enable paid add-ons.
+4. **Live URL:** https://meal-planner-pied-beta.vercel.app
 
 ## 5. Core logic
 
