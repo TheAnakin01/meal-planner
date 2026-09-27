@@ -323,8 +323,21 @@ Each step ends with a commit + push. Tick boxes as you go.
       error.tsx, not-found.tsx, loading.tsx added; recipe cards go side-by-side from 640px.
 - [ ] **Step 13 — Launch check:** add Vercel URL to Supabase redirect URLs, test sign-up → profile → plan on a phone,
       confirm no service is on a paid plan.
+      Automated checks passed 2026-09-27: live pages/redirects/404/footer backlink OK; `.env.local` never committed and
+      no keys in git history; Spoonacular key absent from browser bundles; strangers read `[]` and writes are refused
+      by RLS; `npm audit --omit=dev` 0 vulnerabilities. **Remaining (owner):** phone walkthrough + confirm free plans.
 
-## 10. Commands (after Step 1)
+## 10. Known limits & maintenance (free plans)
+
+- **Spoonacular:** 50 points/day ≈ 12 plan-page views/day across all users (no caching, §4.3). When used up, meals
+  show "Today's free recipe limit has been reached" until midnight UTC. "Show another" and the Saved page cost 0.
+- **Supabase:** free projects pause after ~1 week without visits → the app shows "Something went wrong". Fix: Supabase
+  dashboard → project → **Restore** (free). Built-in auth email is limited to a few emails/hour.
+- **Vercel Hobby:** free for personal, non-commercial use. Never enable paid add-ons.
+- **Allergen safety** (§5.3) is strict by design and may leave a meal with no suggestions; that is intended.
+- Rotating a key: update `.env.local` and Vercel → Settings → Environment Variables, then **Redeploy**.
+
+## 11. Commands (after Step 1)
 
 ```
 npm install        # install dependencies
@@ -335,7 +348,7 @@ npm test           # unit tests (Vitest)
 git add -A && git commit -m "message" && git push   # save + deploy
 ```
 
-## 11. Conventions
+## 12. Conventions
 
 - TypeScript strict mode; no `any`.
 - Server-only secrets accessed only in route handlers / server components.
