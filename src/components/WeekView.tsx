@@ -50,10 +50,18 @@ export default function WeekView({ days, targetKcal, targetProteinG, leftovers, 
 
   function run(task: () => Promise<{ ok: true; notes?: string[] } | { ok: false; error: string }>) {
     setMessage(null);
+    if (!navigator.onLine) {
+      setMessage({ tone: "error", text: "You're offline — changing the plan needs internet." });
+      return;
+    }
     startTransition(async () => {
-      const r = await task();
-      if (!r.ok) setMessage({ tone: "error", text: r.error });
-      else if (r.notes && r.notes.length > 0) setMessage({ tone: "ok", text: r.notes.join(" ") });
+      try {
+        const r = await task();
+        if (!r.ok) setMessage({ tone: "error", text: r.error });
+        else if (r.notes && r.notes.length > 0) setMessage({ tone: "ok", text: r.notes.join(" ") });
+      } catch {
+        setMessage({ tone: "error", text: navigator.onLine ? "Something went wrong. Please try again." : "You're offline — changing the plan needs internet." });
+      }
     });
   }
 

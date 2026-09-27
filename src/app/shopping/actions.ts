@@ -32,18 +32,20 @@ const failed = (error: { message: string } | null, what: string): Result | null 
   return { ok: false, error: "Couldn't save that. Please try again." };
 };
 
-// Tick / untick an item that comes from the meal plan.
-export async function setCheckedAction(ingredientId: unknown, checked: unknown): Promise<Result> {
+// Tick / untick an item that comes from the meal plan. `week` is sent by ticks made offline
+// (they may sync after the week has changed); otherwise it's this week.
+export async function setCheckedAction(ingredientId: unknown, checked: unknown, week?: unknown): Promise<Result> {
   const id = idSchema.safeParse(ingredientId);
   const value = z.boolean().safeParse(checked);
-  if (!id.success || !value.success) return { ok: false, error: "Invalid item." };
+  const weekParsed = z.iso.date().optional().safeParse(week);
+  if (!id.success || !value.success || !weekParsed.success) return { ok: false, error: "Invalid item." };
   const ctx = await context();
   if (!ctx) return { ok: false, error: "Please sign in again." };
 
   const { error } = await ctx.supabase
     .from("shopping_list_items")
     .upsert(
-      { user_id: ctx.userId, week_start: ctx.week, ingredient_id: id.data, checked: value.data },
+      { user_id: ctx.userId, week_start: weekParsed.data ?? ctx.week, ingredient_id: id.data, checked: value.data },
       { onConflict: "user_id,week_start,ingredient_id" },
     );
   return failed(error, "setChecked") ?? done();

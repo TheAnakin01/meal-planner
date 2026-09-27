@@ -24,9 +24,17 @@ export default function TodayMeals({ day, meals }: { day: number; meals: TodayMe
 
   function swap(meal: MealType) {
     setError("");
+    if (!navigator.onLine) {
+      setError("You're offline — changing the plan needs internet.");
+      return;
+    }
     startTransition(async () => {
-      const r = await swapMealAction(day, meal);
-      if (!r.ok) setError(r.error);
+      try {
+        const r = await swapMealAction(day, meal);
+        if (!r.ok) setError(r.error);
+      } catch {
+        setError(navigator.onLine ? "Something went wrong. Please try again." : "You're offline — changing the plan needs internet.");
+      }
     });
   }
 

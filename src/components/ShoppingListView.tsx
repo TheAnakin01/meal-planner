@@ -1,6 +1,7 @@
 "use client";
 
-import { type FormEvent, useOptimistic, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useCallback, useEffect, useState, useTransition } from "react";
 import {
   addCustomItemAction,
   deleteCustomItemAction,
@@ -9,6 +10,7 @@ import {
   setPantryAction,
   setPreferredStoreAction,
 } from "@/app/shopping/actions";
+import { applyPending, browserStorage, enqueueTick, flushOutbox, readOutbox } from "@/lib/outbox";
 import type { CustomItem } from "@/lib/shopping-server";
 import {
   type ShoppingItem,
@@ -26,30 +28,86 @@ interface Props {
   custom: CustomItem[];
   preferredStore: StoreId;
   shareTitle: string;
+  week: string; // YYYY-MM-DD Monday, for ticks made offline
 }
 
 const linkButton = "text-xs font-semibold text-emerald-700 hover:underline disabled:opacity-50 dark:text-emerald-400";
 
-export default function ShoppingListView({ list, checkedIds, custom, preferredStore, shareTitle }: Props) {
+const OFFLINE_MESSAGE = "You're offline — this needs internet. Ticking items still works.";
+
+export default function ShoppingListView({ list, checkedIds, custom, preferredStore, shareTitle, week }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [store, setStore] = useState<StoreId>(preferredStore);
   const [copied, setCopied] = useState(false);
   const [newItem, setNewItem] = useState("");
-  // Ticks update instantly; the server catches up.
-  const [checked, toggleChecked] = useOptimistic(new Set(checkedIds), (set: Set<number>, id: number) => {
-    const next = new Set(set);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    return next;
-  });
+  // Ticks show instantly. Without signal they wait in the outbox (on this phone) and sync later.
+  const [checked, setChecked] = useState(() => new Set(checkedIds));
+  const [waiting, setWaiting] = useState(0);
 
-  function run(task: () => Promise<{ ok: true } | { ok: false; error: string }>, optimistic?: () => void) {
+  const flush = useCallback(async () => {
+    const storage = browserStorage();
+    if (readOutbox(storage).length === 0 || !navigator.onLine) return;
+    const sent = await flushOutbox(storage, async (e) => (await setCheckedAction(e.ingredientId, e.checked, e.week)).ok);
+    setWaiting(readOutbox(storage).length);
+    if (sent > 0) router.refresh();
+  }, [router]);
+
+  useEffect(() => {
+    // Show ticks made offline (saved on this phone) on top of the server's list, then try to send them.
+    const pending = readOutbox(browserStorage());
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with phone storage after mount
+    setChecked(applyPending(checkedIds, pending, week));
+    setWaiting(pending.length);
+    void flush();
+    window.addEventListener("online", flush);
+    return () => window.removeEventListener("online", flush);
+  }, [checkedIds, week, flush]);
+
+  async function toggle(id: number) {
+    const next = !checked.has(id);
     setError("");
+    setChecked((current) => {
+      const updated = new Set(current);
+      if (next) updated.add(id);
+      else updated.delete(id);
+      return updated;
+    });
+    const queue = () => {
+      enqueueTick(browserStorage(), { week, ingredientId: id, checked: next });
+      setWaiting(readOutbox(browserStorage()).length);
+    };
+    if (!navigator.onLine) return queue();
+    try {
+      const r = await setCheckedAction(id, next, week);
+      if (!r.ok) {
+        setError(r.error);
+        setChecked((current) => {
+          const reverted = new Set(current);
+          if (next) reverted.delete(id);
+          else reverted.add(id);
+          return reverted;
+        });
+      }
+    } catch {
+      queue(); // lost signal mid-way: keep the tick and send it later
+    }
+  }
+
+  function run(task: () => Promise<{ ok: true } | { ok: false; error: string }>) {
+    setError("");
+    if (!navigator.onLine) {
+      setError(OFFLINE_MESSAGE);
+      return;
+    }
     startTransition(async () => {
-      optimistic?.();
-      const r = await task();
-      if (!r.ok) setError(r.error);
+      try {
+        const r = await task();
+        if (!r.ok) setError(r.error);
+      } catch {
+        setError(navigator.onLine ? "Something went wrong. Please try again." : OFFLINE_MESSAGE);
+      }
     });
   }
 
@@ -92,12 +150,7 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
           type="checkbox"
           id={`item-${item.ingredientId}`}
           checked={isChecked}
-          onChange={() =>
-            run(
-              () => setCheckedAction(item.ingredientId, !isChecked),
-              () => toggleChecked(item.ingredientId),
-            )
-          }
+          onChange={() => void toggle(item.ingredientId)}
           className="mt-1 h-5 w-5 shrink-0 accent-emerald-700"
         />
         <div className="min-w-0 flex-1">
@@ -166,6 +219,7 @@ export default function ShoppingListView({ list, checkedIds, custom, preferredSt
 
       <p className="text-sm text-zinc-600 dark:text-zinc-400" role="status">
         {total === 0 ? "Nothing to buy yet." : `${done} of ${total} ticked`}
+        {waiting > 0 && ` · ${waiting} tick${waiting === 1 ? "" : "s"} waiting to sync`}
       </p>
       {error && (
         <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">

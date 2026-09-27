@@ -571,7 +571,13 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
 - [x] **Step 24 — Installable PWA:** manifest, icons, install prompt, iPhone instructions.
       `src/app/manifest.ts` (start_url /dashboard, standalone, shortcuts); icons from `scripts/generate-icons.mjs`
       (sharp) into `public/icons` + `src/app/icon.png`; `appleWebApp` + theme colour in layout; `InstallPrompt` on Today.
-- [ ] **Step 25 — Offline data & sync:** Serwist service worker, IndexedDB store, outbox sync, offline banner.
+- [x] **Step 25 — Offline data & sync:** Serwist service worker, IndexedDB store, outbox sync, offline banner.
+      Changed approach (2026-09-27): hand-written `public/sw.js` instead of Serwist (less to maintain, exact control):
+      app files cache-first; ONLY own pages (/dashboard, /week, /shopping, /recipes/:id, /profile) network-first; never
+      /discover (Spoonacular terms), /admin, other origins, POSTs or RSC requests; sign-out clears saved pages
+      (`SignOutButton`). Offline ticks use a localStorage outbox (`src/lib/outbox.ts`) instead of IndexedDB (tiny data).
+      SW registers in production only (`OfflineSupport`, also the offline banner). Logic tested in `tests/sw.test.ts`
+      (Node sandbox) — the Claude desktop preview browser can't register service workers.
 
 **Phase D — AI coach**
 - [ ] **Step 26 — Coach chat:** opt-in notice, minimised context, safety rules, caps, history deletion.

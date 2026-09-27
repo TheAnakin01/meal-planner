@@ -32,6 +32,8 @@ export default async function ShoppingPage() {
         </Link>
       </div>
       <ShoppingListView
+        key={data.checkedIds.join(",")}
+        week={data.plan.weekStart}
         list={data.list}
         checkedIds={data.checkedIds}
         custom={data.custom}

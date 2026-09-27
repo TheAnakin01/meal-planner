@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { signOut } from "@/app/login/actions";
+import SignOutButton from "@/components/SignOutButton";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,14 +39,7 @@ export default async function SiteHeader() {
             <span className="hidden truncate text-sm text-zinc-600 sm:inline dark:text-zinc-400">
               {email}
             </span>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-lg border border-zinc-300 px-2 py-2 text-sm font-medium hover:bg-zinc-100 sm:px-3 dark:border-zinc-700 dark:hover:bg-zinc-800"
-              >
-                Sign out
-              </button>
-            </form>
+            <SignOutButton />
           </div>
         ) : (
           <Link

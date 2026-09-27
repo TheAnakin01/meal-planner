@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import OfflineSupport from "@/components/OfflineSupport";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
 
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <SiteHeader />
+        <OfflineSupport />
         {children}
         <footer className="border-t border-zinc-200 dark:border-zinc-800">
           {/* Backlink required by the Spoonacular free plan (CLAUDE.md §4.3). */}
