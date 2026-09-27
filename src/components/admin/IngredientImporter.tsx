@@ -1,11 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useState, useTransition } from "react";
-import { createIngredientAction, searchUsdaAction } from "@/app/admin/ingredients/actions";
+import { saveIngredientAction, searchUsdaAction } from "@/app/admin/ingredients/actions";
 import { ALLERGENS, type AllergenId } from "@/lib/allergens";
 import type { IngredientInput } from "@/lib/ingredient-input";
-import { AISLES, type AisleId, type PurchaseUnit } from "@/lib/library";
-import { suggestIngredientTags } from "@/lib/recipe-analysis";
+import { AISLES, type AisleId, type Ingredient, type PurchaseUnit } from "@/lib/library";
+import { kcalMismatch, suggestIngredientTags } from "@/lib/recipe-analysis";
 import type { UsdaFood } from "@/lib/usda";
 
 const inputClass =
@@ -79,12 +80,44 @@ function newDraft(name: string, food: UsdaFood | null): Draft {
   });
 }
 
+// Editing an existing ingredient: keep exactly what was saved (no re-suggesting).
+function draftFromIngredient(i: Ingredient): Draft {
+  const n = i.per100g;
+  return {
+    name: i.name,
+    aliases: i.aliases.join(", "),
+    fdcId: i.fdcId,
+    usdaDescription: null,
+    kcal: n ? String(n.kcal) : "",
+    protein: n ? String(n.proteinG) : "",
+    carbs: n ? String(n.carbsG) : "",
+    fat: n ? String(n.fatG) : "",
+    fiber: n ? String(n.fiberG) : "0",
+    allergenTags: i.allergenTags,
+    flags: {
+      containsMeat: i.containsMeat,
+      containsFish: i.containsFish,
+      containsEgg: i.containsEgg,
+      containsDairy: i.containsDairy,
+      containsHoney: i.containsHoney,
+      jainAvoid: i.jainAvoid,
+    },
+    aisle: i.aisle,
+    purchaseUnit: i.purchaseUnit,
+    packSize: String(i.packSize),
+    gramsPerPiece: i.gramsPerPiece ? String(i.gramsPerPiece) : "",
+    gramsPerMl: String(i.gramsPerMl),
+    searchTerm: i.searchTerm,
+  };
+}
+
 const num = (s: string) => (s.trim() === "" ? NaN : Number(s));
 
-export default function IngredientImporter() {
+export default function IngredientImporter({ editing }: { editing?: Ingredient }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UsdaFood[] | null>(null);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(editing ? draftFromIngredient(editing) : null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -127,9 +160,11 @@ export default function IngredientImporter() {
     };
     setMessage(null);
     startTransition(async () => {
-      const result = await createIngredientAction(input);
+      const result = await saveIngredientAction(input, editing?.id ?? null);
       if ("error" in result) {
         setMessage({ tone: "error", text: result.error });
+      } else if (editing) {
+        router.push(`/admin/ingredients?saved=${encodeURIComponent(draft.name)}&recipes=${result.recipesUpdated}`);
       } else {
         setMessage({ tone: "ok", text: `Saved "${draft.name}".` });
         setDraft(null);
@@ -141,12 +176,24 @@ export default function IngredientImporter() {
 
   const update = (patch: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...patch } : d));
 
+  const expectedKcal =
+    draft && [draft.kcal, draft.protein, draft.carbs, draft.fat].every((v) => Number.isFinite(num(v)))
+      ? kcalMismatch({
+          kcal: num(draft.kcal),
+          proteinG: num(draft.protein),
+          carbsG: num(draft.carbs),
+          fatG: num(draft.fat),
+          fiberG: num(draft.fiber) || 0,
+        })
+      : null;
+
   return (
     <section aria-labelledby="add-ingredient" className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
       <h2 id="add-ingredient" className="text-xl font-bold">
-        Add an ingredient
+        {editing ? `Edit "${editing.name}"` : "Add an ingredient"}
       </h2>
 
+      {!editing && (
       <form onSubmit={search} className="flex gap-2">
         <label htmlFor="usda-query" className="sr-only">
           Search USDA
@@ -162,6 +209,7 @@ export default function IngredientImporter() {
           Search
         </button>
       </form>
+      )}
 
       {message && (
         <p
@@ -243,6 +291,15 @@ export default function IngredientImporter() {
                 </Field>
               ))}
             </div>
+            {expectedKcal !== null && (
+              <p role="status" className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                Calories don&apos;t match protein, carbs and fat — those add up to about <strong>{expectedKcal} kcal</strong>.
+                Please check the numbers.{" "}
+                <button type="button" onClick={() => update({ kcal: String(expectedKcal) })} className="font-semibold underline">
+                  Use {expectedKcal}
+                </button>
+              </p>
+            )}
           </fieldset>
 
           <fieldset>
@@ -311,9 +368,15 @@ export default function IngredientImporter() {
             <button type="submit" disabled={pending} className={buttonClass}>
               {pending ? "Saving…" : "Save ingredient"}
             </button>
-            <button type="button" onClick={() => setDraft(null)} className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold dark:border-zinc-700">
-              Back to results
-            </button>
+            {editing ? (
+              <button type="button" onClick={() => router.push("/admin/ingredients")} className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold dark:border-zinc-700">
+                Cancel
+              </button>
+            ) : (
+              <button type="button" onClick={() => setDraft(null)} className="rounded-xl border border-zinc-300 px-4 py-2 font-semibold dark:border-zinc-700">
+                Back to results
+              </button>
+            )}
           </div>
         </form>
       )}

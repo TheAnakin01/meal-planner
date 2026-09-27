@@ -533,7 +533,11 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       USDA values for Indian foods can be off (FNDDS paneer lists 22 g carbs/100 g), so the importer lets the owner
       edit numbers. Rate limit seen: 3,600 requests/hour. Code: `usda.ts`, `usda-server.ts`, `recipe-analysis.ts`,
       `ingredient-input.ts`, admin page `/admin/ingredients`.
-- [ ] **Step 17 — Admin recipe editor:** create/edit/publish recipes, ingredient search, live nutrition preview.
+- [x] **Step 17 — Admin recipe editor:** create/edit/publish recipes, ingredient search, live nutrition preview.
+      Saves go through `public.save_recipe(p_recipe, p_lines)` (migration 0005) in one transaction; the server
+      recomputes nutrition/allergens/diets from DB ingredients (browser values never trusted); published recipes must
+      have nutrition (DB constraint). Editing an ingredient recalculates every recipe using it. Importer warns when
+      kcal is >7% off the macro estimate (fibre counted at 2 kcal/g).
 - [ ] **Step 18 — AI recipe drafting (admin only):** Gemini free key, structured JSON drafts → review → publish;
       seed ~80 recipes.
 

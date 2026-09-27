@@ -50,16 +50,20 @@ export default async function AdminPage() {
         ))}
       </dl>
 
-      <Link
-        href="/admin/ingredients"
-        className="mt-8 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800"
-      >
-        Manage ingredients
-      </Link>
-
-      <p className="mt-8 rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
-        Coming next: the recipe editor (Step 17).
-      </p>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Link
+          href="/admin/recipes"
+          className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800"
+        >
+          Manage recipes
+        </Link>
+        <Link
+          href="/admin/ingredients"
+          className="rounded-xl border border-zinc-300 px-5 py-3 font-semibold hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          Manage ingredients
+        </Link>
+      </div>
     </main>
   );
 }

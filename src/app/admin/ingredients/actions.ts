@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { isCurrentUserAdmin } from "@/lib/admin-server";
 import { ingredientInputSchema, ingredientInputToRow } from "@/lib/ingredient-input";
+import { recomputeRecipesUsing } from "@/lib/library-server";
 import { createClient } from "@/lib/supabase/server";
 import type { UsdaFood } from "@/lib/usda";
 import { searchUsda } from "@/lib/usda-server";
@@ -23,14 +24,22 @@ export async function searchUsdaAction(query: string): Promise<{ foods: UsdaFood
   return result.ok ? { foods: result.foods } : { error: USDA_ERRORS[result.error] };
 }
 
-export async function createIngredientAction(input: unknown): Promise<{ ok: true } | { error: string }> {
+// Creates an ingredient, or updates it when `id` is given. Recipes using an updated ingredient
+// are recalculated so their stored nutrition, allergens and diets stay correct.
+export async function saveIngredientAction(
+  input: unknown,
+  id: number | null = null,
+): Promise<{ ok: true; recipesUpdated: number } | { error: string }> {
   if (!(await isCurrentUserAdmin())) return { error: "Only admins can do this." };
 
   const parsed = ingredientInputSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("ingredients").insert(ingredientInputToRow(parsed.data));
+  const row = ingredientInputToRow(parsed.data);
+  const { error } = id
+    ? await supabase.from("ingredients").update(row).eq("id", id)
+    : await supabase.from("ingredients").insert(row);
   if (error) {
     if (error.code === "23505") {
       return {
@@ -39,11 +48,13 @@ export async function createIngredientAction(input: unknown): Promise<{ ok: true
           : `An ingredient called "${parsed.data.name}" already exists.`,
       };
     }
-    console.error("createIngredientAction failed:", error.message);
+    console.error("saveIngredientAction failed:", error.message);
     return { error: "Couldn't save the ingredient. Please try again." };
   }
 
+  const recipesUpdated = id ? await recomputeRecipesUsing(id) : 0;
   revalidatePath("/admin/ingredients");
   revalidatePath("/admin");
-  return { ok: true };
+  if (recipesUpdated > 0) revalidatePath("/admin/recipes");
+  return { ok: true, recipesUpdated };
 }

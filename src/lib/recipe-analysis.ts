@@ -135,6 +135,18 @@ export function analyzeRecipe(title: string, servings: number, lines: readonly R
   };
 }
 
+// If the stated calories are more than 7% away from the macro-based estimate, returns the estimate
+// (so the owner can spot typos like paneer at 299 kcal with 3 g carbs, which is 8% off); else null.
+// USDA "carbs by difference" includes fibre, which gives ~2 kcal/g rather than 4. It's only a
+// "please check" hint: Atwater factors legitimately vary a little between foods.
+export function kcalMismatch(n: Nutrients): number | null {
+  const fiber = Math.min(n.fiberG, n.carbsG);
+  const estimate = n.proteinG * 4 + (n.carbsG - fiber) * 4 + fiber * 2 + n.fatG * 9;
+  if (estimate < 20 && n.kcal < 20) return null; // e.g. spices, water: too small to judge
+  const reference = Math.max(n.kcal, estimate);
+  return Math.abs(n.kcal - estimate) / reference > 0.07 ? Math.round(estimate) : null;
+}
+
 // Suggested tags/flags for a new ingredient from its name and aliases (the owner confirms them).
 export function suggestIngredientTags(name: string, aliases: readonly string[] = []) {
   const source = { title: name, ingredients: [...aliases] };
