@@ -547,7 +547,12 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       `status=draft, source=ai`; nutrition/allergens/diets always come from our engine, never the AI.
 
 **Phase B — Weekly plan, shopping list, buy online (owner's first priority)**
-- [ ] **Step 19 — Weekly planner engine:** portion scaling, variety, leftovers; tests.
+- [x] **Step 19 — Weekly planner engine:** portion scaling, variety, leftovers; tests.
+      `src/lib/planner.ts` (pure, seeded): `eligibleRecipes` re-runs allergen/diet word checks on top of stored tags;
+      `generateWeek` search order puts calorie fit (±10%) before variety (2×/wk, no consecutive days → 3×/wk → poor
+      fit → heavy repeats; same-day repeats only as last resort) and explains relaxations in `notes`; gaps are left
+      empty rather than filled unsafely; `swapMeal`, `dayTotals`, `weekStart` (Monday in user timezone).
+      Importer also warns when a dry staple looks like a cooked value (< 250 kcal/100 g).
 - [ ] **Step 20 — Week view UI:** 7-day plan, daily totals, swap / lock / regenerate, recipe detail page.
 - [ ] **Step 21 — Shopping list:** generation, unit rounding, aisles, tick-off, custom items, pantry.
 - [ ] **Step 22 — Buy online & share:** store links (§17), preferred store, WhatsApp share, copy list.

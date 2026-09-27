@@ -6,7 +6,7 @@ import { saveIngredientAction, searchUsdaAction } from "@/app/admin/ingredients/
 import { ALLERGENS, type AllergenId } from "@/lib/allergens";
 import type { IngredientInput } from "@/lib/ingredient-input";
 import { AISLES, type AisleId, type Ingredient, type PurchaseUnit } from "@/lib/library";
-import { kcalMismatch, suggestIngredientTags } from "@/lib/recipe-analysis";
+import { kcalMismatch, looksCooked, suggestIngredientTags } from "@/lib/recipe-analysis";
 import type { UsdaFood } from "@/lib/usda";
 
 const inputClass =
@@ -291,6 +291,12 @@ export default function IngredientImporter({ editing, initialQuery = "" }: { edi
                 </Field>
               ))}
             </div>
+            {draft && looksCooked(draft.name, draft.aisle, num(draft.kcal)) && (
+              <p role="status" className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                <strong>{draft.kcal} kcal</strong> looks like a <strong>cooked</strong> value. Recipes use <strong>raw</strong>{" "}
+                weights, so pick the raw/dry USDA entry (usually 330–380 kcal per 100 g for rice, dal and flour).
+              </p>
+            )}
             {expectedKcal !== null && (
               <p role="status" className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
                 Calories don&apos;t match protein, carbs and fat — those add up to about <strong>{expectedKcal} kcal</strong>.

@@ -147,6 +147,19 @@ export function kcalMismatch(n: Nutrients): number | null {
   return Math.abs(n.kcal - estimate) / reference > 0.07 ? Math.round(estimate) : null;
 }
 
+// Dry staples are ~330–380 kcal/100 g raw but ~100–150 cooked. Recipes use RAW weights, so a cooked
+// value would make every recipe with it look far lighter than it is (e.g. rice saved at 112 kcal).
+const DRY_STAPLE_WORDS = [
+  "rice", "dal", "lentil", "gram", "chickpea", "chana", "rajma", "kidney bean", "moong", "toor", "urad", "masoor",
+  "flour", "atta", "maida", "besan", "suji", "semolina", "rava", "oats", "poha", "quinoa", "millet", "ragi",
+  "jowar", "bajra", "dalia", "pasta", "noodle", "vermicelli", "sabudana",
+];
+export function looksCooked(name: string, aisle: string, kcalPer100g: number): boolean {
+  const dryAisle = aisle === "grains" || aisle === "pulses";
+  const dryName = findWordHit({ title: name, ingredients: [] }, DRY_STAPLE_WORDS) !== null;
+  return (dryAisle || dryName) && kcalPer100g > 0 && kcalPer100g < 250;
+}
+
 // Suggested tags/flags for a new ingredient from its name and aliases (the owner confirms them).
 export function suggestIngredientTags(name: string, aliases: readonly string[] = []) {
   const source = { title: name, ingredients: [...aliases] };

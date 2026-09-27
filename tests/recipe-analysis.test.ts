@@ -5,6 +5,7 @@ import {
   computeAllergens,
   computeDietTypes,
   computeNutrition,
+  looksCooked,
   suggestIngredientTags,
 } from "@/lib/recipe-analysis";
 
@@ -132,5 +133,19 @@ describe("suggestIngredientTags", () => {
     expect(suggestIngredientTags("mutton")).toMatchObject({ containsMeat: true });
     // Besan is chickpea flour: "flour" alone would suggest wheat, but "chickpea flour" is a known safe phrase.
     expect(suggestIngredientTags("besan", ["chickpea flour"]).allergenTags).toEqual([]);
+  });
+});
+
+describe("looksCooked", () => {
+  it("flags dry staples saved with cooked values (like rice at 112 kcal)", () => {
+    expect(looksCooked("rice", "other", 112)).toBe(true);
+    expect(looksCooked("toor dal", "pulses", 120)).toBe(true);
+    expect(looksCooked("anything", "grains", 130)).toBe(true);
+  });
+
+  it("accepts raw values and non-staples", () => {
+    expect(looksCooked("basmati rice", "grains", 356)).toBe(false);
+    expect(looksCooked("onion", "produce", 38)).toBe(false);
+    expect(looksCooked("water", "other", 0)).toBe(false);
   });
 });
