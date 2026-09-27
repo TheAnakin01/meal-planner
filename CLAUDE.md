@@ -115,7 +115,8 @@ Meal_Planner/
    card and can bill overages). The **Free** plan needs no card.
 2. Console → **Profile** → copy the **API key** into `.env.local` and Vercel as `SPOONACULAR_API_KEY`.
 3. Free plan limits: **50 points/day** (resets midnight UTC), 1 request/second. When used up the API returns
-   **HTTP 402** until reset — it never charges. Each meal search costs ≈ 2.2 points (§5.4), so ≈ 7 fresh plans/day.
+   **HTTP 402** until reset — it never charges. Each meal search costs ≈ 1.4 points (measured, §5.4), so ≈ 12 fresh
+   plans/day (fewer thanks to caching repeats).
 4. Terms: a **backlink to spoonacular is required** on the free plan (footer: "Recipes powered by spoonacular");
    API data may be cached for **at most 1 hour**.
 
@@ -202,6 +203,8 @@ Plus a free-text "Other allergies" field (comma-separated words, e.g. "kiwi, str
    - any ingredient name (`nutrition.ingredients[].name`) or the recipe title contains a keyword from that allergen's keyword list in
      `allergens.ts` (e.g. dairy → milk, butter, cheese, cream, yogurt, whey, casein, ghee; wheat → flour, bread, pasta,
      couscous, semolina...; case-insensitive, word match), or any free-text allergy word.
+   **Why layer 2 is essential:** a real test on 2026-09-27 with `intolerances=dairy` returned 6 recipes, 2 of which
+   Spoonacular itself flagged `dairyFree: false` (breakfast sausage; chocolate chips). The API filter alone is NOT safe.
 3. If no safe recipes remain for a meal, show "No safe recipes found — try again" rather than an unsafe one.
 4. Unit tests in `tests/allergens.test.ts` must prove unsafe recipes are removed.
 5. UI disclaimer: "Always check ingredient labels; data comes from third parties."
@@ -217,7 +220,7 @@ GET https://api.spoonacular.com/recipes/complexSearch
   &addRecipeNutrition=true              (per-serving nutrients + ingredient names; implies addRecipeInformation)
   &sort=random&number=6
 ```
-- Points per meal search: 1 + 1 (nutrient filter) + 6 × (0.01 + 0.025) ≈ **2.2**; a full plan ≈ 6.6 of the 50/day.
+- Points per meal search: docs suggest ≈ 2.2, but a real call on 2026-09-27 cost **1.36**; a full plan ≈ 4.1 of the 50/day.
 - Fetch a **pool of 6 per meal** in one call; the UI shows a few and "Show another" rotates through the pool
   (no extra API calls).
 - Cache each unique query for **1 hour** (`fetch` with `next: { revalidate: 3600 }`) — the maximum Spoonacular allows.
@@ -303,7 +306,7 @@ Each step ends with a commit + push. Tick boxes as you go.
       add Supabase clients + `src/proxy.ts` (Next.js 16 renamed middleware to proxy).
 - [x] **Step 6 — Auth:** login/sign-up pages, callback route, protect `/profile` and `/dashboard`, sign-out button.
 - [x] **Step 7 — Save profile:** load/save profile from Supabase; redirect new users to `/profile`.
-- [ ] **Step 8 — Recipe API (Spoonacular):** sign up (free, no card), `src/lib/recipes.ts`, caching, error handling.
+- [x] **Step 8 — Recipe API (Spoonacular):** sign up (free, no card), `src/lib/recipes.ts`, caching, error handling.
 - [ ] **Step 9 — Allergen safety:** `src/lib/allergens.ts`, two-layer filtering, unit tests (§5.3).
 - [ ] **Step 10 — Dashboard UI:** macro summary, meal sections, recipe cards, "Show another", spoonacular backlink.
 - [ ] **Step 11 — Saved recipes (optional):** heart button → `saved_recipes` table, "My saved recipes" list.
