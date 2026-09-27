@@ -7,7 +7,7 @@
 // not be stored), admin pages, form submissions. Signing out deletes the saved pages.
 /* global self, caches, URL, Response */
 
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = "/offline";
@@ -31,9 +31,37 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// The app asks us to forget saved pages when the user signs out.
+// In-app navigation doesn't load whole pages, so the app tells us which pages to save:
+// { type: "cache-pages", paths: [...] }. Only our own savable pages are fetched, at most once a minute each.
+const lastSaved = new Map();
+const SAVE_EVERY_MS = 60_000;
+
+async function savePage(path) {
+  if (!OFFLINE_PAGES.some((pattern) => pattern.test(path))) return;
+  const now = Date.now();
+  if (now - (lastSaved.get(path) ?? 0) < SAVE_EVERY_MS) return;
+  lastSaved.set(path, now);
+  try {
+    const response = await fetch(path, { credentials: "same-origin" });
+    if (response.ok && !response.redirected && response.type === "basic") {
+      const cache = await caches.open(PAGE_CACHE);
+      await cache.put(path, response);
+    }
+  } catch {
+    lastSaved.delete(path); // offline: try again next time
+  }
+}
+
 self.addEventListener("message", (event) => {
-  if (event.data === "clear-pages") event.waitUntil(caches.delete(PAGE_CACHE));
+  // The app asks us to forget saved pages when the user signs out.
+  if (event.data === "clear-pages") {
+    lastSaved.clear();
+    event.waitUntil(caches.delete(PAGE_CACHE));
+    return;
+  }
+  const paths = event.data && event.data.type === "cache-pages" && Array.isArray(event.data.paths) ? event.data.paths : [];
+  const unique = [...new Set(paths.filter((p) => typeof p === "string"))].slice(0, 40);
+  event.waitUntil(Promise.all([...unique.map(savePage), saveOfflinePage()]));
 });
 
 async function saveOfflinePage() {

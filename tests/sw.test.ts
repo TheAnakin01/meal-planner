@@ -116,12 +116,12 @@ beforeEach(async () => {
 
 describe("service worker", () => {
   it("saves app files on install, and the offline page with the personal pages", () => {
-    expect([...sw.cacheMap.get("static-v1")!.store.keys()].map((k) => new URL(k).pathname)).toEqual([
+    expect([...sw.cacheMap.get("static-v2")!.store.keys()].map((k) => new URL(k).pathname)).toEqual([
       "/manifest.webmanifest",
       "/icons/icon-192.png",
       "/icons/icon-512.png",
     ]);
-    expect(sw.cacheMap.get("pages-v1")!.store.has(keyOf("/offline"))).toBe(true);
+    expect(sw.cacheMap.get("pages-v2")!.store.has(keyOf("/offline"))).toBe(true);
   });
 
   it("serves your saved pages when offline", async () => {
@@ -139,7 +139,7 @@ describe("service worker", () => {
   it("never saves Discover (Spoonacular data) or admin pages", async () => {
     await sw.get("/discover");
     await sw.get("/admin");
-    const pages = [...sw.cacheMap.get("pages-v1")!.store.keys()].map((k) => new URL(k).pathname);
+    const pages = [...sw.cacheMap.get("pages-v2")!.store.keys()].map((k) => new URL(k).pathname);
     expect(pages).not.toContain("/discover");
     expect(pages).not.toContain("/admin");
     sw.setOnline(false);
@@ -149,7 +149,7 @@ describe("service worker", () => {
   it("doesn't save redirects (e.g. to the login page) or errors", async () => {
     sw.server.set(keyOf("/dashboard"), response("login page", { redirected: true }));
     await sw.get("/dashboard");
-    expect(sw.cacheMap.get("pages-v1")!.store.has(keyOf("/dashboard"))).toBe(false);
+    expect(sw.cacheMap.get("pages-v2")!.store.has(keyOf("/dashboard"))).toBe(false);
   });
 
   it("leaves other websites, form posts and page data alone", async () => {
@@ -164,10 +164,28 @@ describe("service worker", () => {
     expect((await sw.get("/_next/static/app.js", "no-cors"))?.body).toBe("content of /_next/static/app.js");
   });
 
+  it("saves pages the app asks for (in-app navigation), but only our own savable pages", async () => {
+    sw.server.set(keyOf("/shopping"), response("content of /shopping"));
+    await sw.dispatch("message", { data: { type: "cache-pages", paths: ["/shopping", "/discover", "/admin", "https://evil.example/x"] } });
+    const pages = [...sw.cacheMap.get("pages-v2")!.store.keys()].map((k) => new URL(k).pathname);
+    expect(pages).toContain("/shopping");
+    expect(pages).not.toContain("/discover");
+    expect(pages).not.toContain("/admin");
+    sw.setOnline(false);
+    expect((await sw.get("/shopping"))?.body).toBe("content of /shopping");
+  });
+
+  it("doesn't re-download a page it saved less than a minute ago", async () => {
+    await sw.dispatch("message", { data: { type: "cache-pages", paths: ["/week"] } });
+    const before = sw.fetched.filter((p) => p === "/week").length;
+    await sw.dispatch("message", { data: { type: "cache-pages", paths: ["/week"] } });
+    expect(sw.fetched.filter((p) => p === "/week").length).toBe(before);
+  });
+
   it("forgets personal pages (incl. the offline page) when asked at sign-out", async () => {
     await sw.get("/week");
     await sw.dispatch("message", { data: "clear-pages" });
-    expect(sw.cacheMap.has("pages-v1")).toBe(false);
-    expect(sw.cacheMap.has("static-v1")).toBe(true);
+    expect(sw.cacheMap.has("pages-v2")).toBe(false);
+    expect(sw.cacheMap.has("static-v2")).toBe(true);
   });
 });

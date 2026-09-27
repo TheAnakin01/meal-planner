@@ -578,6 +578,9 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       (`SignOutButton`). Offline ticks use a localStorage outbox (`src/lib/outbox.ts`) instead of IndexedDB (tiny data).
       SW registers in production only (`OfflineSupport`, also the offline banner). Logic tested in `tests/sw.test.ts`
       (Node sandbox) — the Claude desktop preview browser can't register service workers.
+      Fix (sw v2): in-app (client-side) navigation never loads whole pages, so `OfflineSupport` posts
+      {type:"cache-pages"} on each route change with the current page, /dashboard, /week, /shopping and linked
+      /recipes/:id pages; the SW fetches savable ones (max once/minute each).
 
 **Phase D — AI coach**
 - [ ] **Step 26 — Coach chat:** opt-in notice, minimised context, safety rules, caps, history deletion.
