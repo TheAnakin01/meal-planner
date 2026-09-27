@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import MacroSummary from "@/components/MacroSummary";
 import MealPlan, { MealPlanSkeleton } from "@/components/MealPlan";
+import { isCurrentUserAdmin } from "@/lib/admin-server";
 import { allergenLabel } from "@/lib/allergens";
 import { dietLabel } from "@/lib/diet";
 import { calculateNutritionPlan } from "@/lib/nutrition";
@@ -19,6 +20,7 @@ export default async function DashboardPage() {
   if (!profile) redirect("/profile");
 
   const plan = calculateNutritionPlan(profile);
+  const isAdmin = await isCurrentUserAdmin();
   const excluding = [...profile.allergies.map(allergenLabel), ...profile.otherAllergies];
 
   return (
@@ -32,6 +34,14 @@ export default async function DashboardPage() {
           Edit details
         </Link>
       </div>
+
+      {isAdmin && (
+        <p className="mb-6 text-sm">
+          <Link href="/admin" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+            Recipe library (admin) →
+          </Link>
+        </p>
+      )}
 
       <MacroSummary plan={plan} excluding={excluding} diet={dietLabel(profile.dietType)} />
 

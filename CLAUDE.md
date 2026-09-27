@@ -488,7 +488,7 @@ affiliate programs, storing any Spoonacular data beyond id/title/image.
 ## 20. v2 data model (new tables; all with Row Level Security "users see only their own rows")
 
 - `profiles` + columns: `diet_type` (veg | eggetarian | vegan | jain | nonveg), `timezone`, `preferred_store`,
-  `leftovers_mode`, `coach_enabled`, `is_admin` (admin can edit the library; set manually by the owner in Supabase).
+  `leftovers_mode`, `coach_enabled`.
 - `ingredients` (public read): name, aliases, fdc_id, nutrients per 100 g, allergen_tags[], diet flags, aisle,
   purchase_unit, grams_per_unit, search_term.
 - `recipes` (public read when published): title, description, cuisine, meal_types[], servings, steps[], image_url,
@@ -502,7 +502,9 @@ affiliate programs, storing any Spoonacular data beyond id/title/image.
 - `weight_log`: user_id, date, weight_kg.
 - `coach_messages`: user_id, role, content, created_at (auto-deleted after 30 days).
 - `push_subscriptions`: user_id, endpoint, keys (for reminders).
-- Admin writes to `ingredients`/`recipes` are allowed only when `profiles.is_admin = true` (RLS policy).
+- `admins` (user_id): who may edit the library. **Not** a profile column, because users can update their own profile
+  row. Users can only *read* their own admins row; the owner adds rows in the Supabase dashboard. RLS on
+  `ingredients`/`recipes`/`recipe_ingredients` allows writes only when `public.is_admin()` is true (migration 0004).
 
 ## 21. New environment variables
 
