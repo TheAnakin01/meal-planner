@@ -12,7 +12,7 @@ grocery apps, and works offline as an installable app.
 - **Strict allergen safety** — 16 allergens plus your own words, checked twice (ingredient tags *and* a word check)
   everywhere: recipes, plans, swaps, barcode scans and AI replies.
 - **Indian diet types** — vegetarian, eggetarian, vegan, Jain and non-vegetarian.
-- **Weekly meal plan** — a swipe-simple day picker with animated calorie rings; portions scaled to your targets,
+- **Weekly meal plan** — a tap-a-day picker with animated calorie rings; portions scaled to your targets,
   variety rules, leftovers mode, swap / lock / regenerate. Motion respects "reduce motion" settings.
 - **Shopping list** — combined quantities rounded to pack sizes, grouped by aisle, pantry, WhatsApp share and "Buy on"
   links for BigBasket, Blinkit, Zepto, Swiggy Instamart, Amazon.in and JioMart.
