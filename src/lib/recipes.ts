@@ -24,7 +24,8 @@ export type RecipeResult = { ok: true; recipes: Recipe[] } | { ok: false; error:
 const CACHE_SECONDS = 3600;
 
 export async function searchRecipes(search: RecipeSearch): Promise<RecipeResult> {
-  const apiKey = process.env.SPOONACULAR_API_KEY;
+  // Tolerate common paste mistakes in the dashboard: surrounding spaces, newlines or quotes.
+  const apiKey = process.env.SPOONACULAR_API_KEY?.trim().replace(/^["']|["']$/g, "");
   if (!apiKey) return { ok: false, error: "not_configured" };
 
   const params = buildSearchParams(search);
