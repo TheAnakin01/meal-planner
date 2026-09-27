@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
@@ -16,6 +16,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Meal Planner",
   description: "Personalised calorie targets and allergy-safe meal ideas.",
+  applicationName: "Meal Planner",
+  // iPhone "Add to Home Screen": open full-screen with our icon and name.
+  appleWebApp: { capable: true, title: "Meal Planner", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#047857" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

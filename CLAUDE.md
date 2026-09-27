@@ -568,7 +568,9 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
       link to Saved; header links: Today, Week, Sign out.
 
 **Phase C — Offline-first app**
-- [ ] **Step 24 — Installable PWA:** manifest, icons, install prompt, iPhone instructions.
+- [x] **Step 24 — Installable PWA:** manifest, icons, install prompt, iPhone instructions.
+      `src/app/manifest.ts` (start_url /dashboard, standalone, shortcuts); icons from `scripts/generate-icons.mjs`
+      (sharp) into `public/icons` + `src/app/icon.png`; `appleWebApp` + theme colour in layout; `InstallPrompt` on Today.
 - [ ] **Step 25 — Offline data & sync:** Serwist service worker, IndexedDB store, outbox sync, offline banner.
 
 **Phase D — AI coach**

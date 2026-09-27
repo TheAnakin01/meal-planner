@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import InstallPrompt from "@/components/InstallPrompt";
 import MacroSummary from "@/components/MacroSummary";
 import TodayMeals, { type TodayMeal } from "@/components/TodayMeals";
 import { isCurrentUserAdmin } from "@/lib/admin-server";
@@ -77,6 +78,8 @@ export default async function DashboardPage() {
           </Link>
         )}
       </nav>
+
+      <InstallPrompt />
 
       <MacroSummary plan={plan.targets} excluding={excluding} diet={dietLabel(profile.dietType)} />
 
