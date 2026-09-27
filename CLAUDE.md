@@ -302,7 +302,7 @@ Each step ends with a commit + push. Tick boxes as you go.
 - [x] **Step 4 — Profile form (no login yet):** form + zod validation; show calories/macros instantly on screen.
 - [x] **Step 5 — Supabase:** create free project, run migration, add env vars locally and on Vercel,
       add Supabase clients + `src/proxy.ts` (Next.js 16 renamed middleware to proxy).
-- [ ] **Step 6 — Auth:** login/sign-up pages, callback route, protect `/profile` and `/dashboard`, sign-out button.
+- [x] **Step 6 — Auth:** login/sign-up pages, callback route, protect `/profile` and `/dashboard`, sign-out button.
 - [ ] **Step 7 — Save profile:** load/save profile from Supabase; redirect new users to `/profile`.
 - [ ] **Step 8 — Edamam integration:** sign up (free), `src/lib/edamam.ts`, `/api/recipes` route, caching, error handling.
 - [ ] **Step 9 — Allergen safety:** `src/lib/allergens.ts`, two-layer filtering, unit tests (§5.3).
