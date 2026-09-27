@@ -688,7 +688,7 @@ Same rules as §9: one step at a time, tests for all logic, commit + push after 
   `supabase_migrations.schema_migrations`. It had applied 0001–0002 itself (why the owner's manual runs said
   "already exists"), then failed on every push from 0003 on ("column diet_type already exists") because 0003–0013
   were run by hand. A failed run changes nothing (it stops at the first statement).
-- Fix: a one-off SQL given to the owner on 2026-09-27 marks 0001–0013 as applied (insert into
+- Fix (owner ran it 2026-09-27; check green from commit b620025): a one-off SQL marks 0001–0013 as applied (insert into
   `supabase_migrations.schema_migrations (version, name)` … on conflict do nothing).
 - **From now on: add a new migration file and push — do NOT also ask the owner to run it in the SQL Editor.**
   Then check the "Supabase Preview" result on the commit (GitHub API check-runs). Seed/one-off SQL (e.g.
