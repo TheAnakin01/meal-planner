@@ -106,7 +106,7 @@ Meal_Planner/
 ### 4.2 Supabase (Free plan)
 1. supabase.com → Sign in with GitHub → **New project** → choose the **Free** plan, any region close to users, set a
    database password (the owner stores it in a password manager, never in chat or Git).
-2. Project Settings → API → copy **Project URL** and **anon public key** into `.env.local`.
+2. Project Settings → API → copy **Project URL** and **Publishable key** (`sb_publishable_...`; older projects call it the anon key) into `.env.local`.
 3. SQL Editor → run `supabase/migrations/0001_init.sql`.
 4. Authentication → URL Configuration → add `http://localhost:3000` and the Vercel URL to Redirect URLs.
 - Note: free projects pause after ~1 week of no activity; just click "Restore" in the dashboard (free).
@@ -271,7 +271,7 @@ Calories/macros are **calculated on the fly** from the profile (not stored), so 
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 EDAMAM_APP_ID=
 EDAMAM_APP_KEY=
 ```
