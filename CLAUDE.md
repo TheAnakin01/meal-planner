@@ -83,7 +83,8 @@ Meal_Planner/
 │   │   └── ui/                # Button, Input, Select, Card, Spinner...
 │   ├── lib/
 │   │   ├── nutrition.ts       # BMR / TDEE / calorie & macro maths (§5.1, §5.2)
-│   │   ├── allergens.ts       # allergy list, Spoonacular mapping, ingredient keyword check (§5.3)
+│   │   ├── allergens.ts       # allergy list + Spoonacular mapping (§5.3 layer 1)
+│   │   ├── allergen-safety.ts # keyword + flag double-check on every recipe (§5.3 layer 2)
 │   │   ├── recipes.ts         # Spoonacular request builder, response parsing, caching (server-only)
 │   │   ├── validation.ts      # zod schemas for the profile form
 │   │   └── supabase/
@@ -201,7 +202,7 @@ Plus a free-text "Other allergies" field (comma-separated words, e.g. "kiwi, str
    - a Spoonacular flag contradicts the allergy (e.g. dairy selected but `dairyFree` is false; gluten/wheat selected
      but `glutenFree` is false), **or**
    - any ingredient name (`nutrition.ingredients[].name`) or the recipe title contains a keyword from that allergen's keyword list in
-     `allergens.ts` (e.g. dairy → milk, butter, cheese, cream, yogurt, whey, casein, ghee; wheat → flour, bread, pasta,
+     `allergen-safety.ts` (e.g. dairy → milk, butter, cheese, cream, yogurt, whey, casein, ghee; wheat → flour, bread, pasta,
      couscous, semolina...; case-insensitive, word match), or any free-text allergy word.
    **Why layer 2 is essential:** a real test on 2026-09-27 with `intolerances=dairy` returned 6 recipes, 2 of which
    Spoonacular itself flagged `dairyFree: false` (breakfast sausage; chocolate chips). The API filter alone is NOT safe.
@@ -307,7 +308,7 @@ Each step ends with a commit + push. Tick boxes as you go.
 - [x] **Step 6 — Auth:** login/sign-up pages, callback route, protect `/profile` and `/dashboard`, sign-out button.
 - [x] **Step 7 — Save profile:** load/save profile from Supabase; redirect new users to `/profile`.
 - [x] **Step 8 — Recipe API (Spoonacular):** sign up (free, no card), `src/lib/recipes.ts`, caching, error handling.
-- [ ] **Step 9 — Allergen safety:** `src/lib/allergens.ts`, two-layer filtering, unit tests (§5.3).
+- [x] **Step 9 — Allergen safety:** `src/lib/allergen-safety.ts`, two-layer filtering, unit tests (§5.3).
 - [ ] **Step 10 — Dashboard UI:** macro summary, meal sections, recipe cards, "Show another", spoonacular backlink.
 - [ ] **Step 11 — Saved recipes (optional):** heart button → `saved_recipes` table, "My saved recipes" list.
 - [ ] **Step 12 — Polish:** mobile testing (360px, 768px), accessibility, loading/empty/error states, disclaimers.

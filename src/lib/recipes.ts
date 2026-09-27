@@ -2,6 +2,7 @@
 // See CLAUDE.md §4.3 (limits) and §5.4 (request).
 
 import "server-only";
+import { filterSafeRecipes } from "@/lib/allergen-safety";
 import {
   type Recipe,
   type RecipeSearch,
@@ -49,5 +50,8 @@ export async function searchRecipes(search: RecipeSearch): Promise<RecipeResult>
   }
 
   const body: unknown = await response.json().catch(() => null);
-  return { ok: true, recipes: parseSearchResponse(body, search.target) };
+  const recipes = parseSearchResponse(body, search.target);
+  // Layer 2: our own allergen check. Spoonacular's filter alone is not safe enough.
+  const safe = filterSafeRecipes(recipes, search.allergies, search.otherAllergies);
+  return { ok: true, recipes: safe };
 }
