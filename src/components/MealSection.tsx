@@ -2,17 +2,27 @@
 
 import { useState } from "react";
 import MealCard from "@/components/MealCard";
+import type { MealType } from "@/lib/nutrition";
 import type { Recipe } from "@/lib/spoonacular";
 
 interface MealSectionProps {
+  mealType: MealType;
   title: string;
   targetCalories: number;
   recipes: Recipe[];
   // Plain-language message when recipes couldn't be loaded.
   error?: string;
+  savedIds: number[];
 }
 
-export default function MealSection({ title, targetCalories, recipes, error }: MealSectionProps) {
+export default function MealSection({
+  mealType,
+  title,
+  targetCalories,
+  recipes,
+  error,
+  savedIds,
+}: MealSectionProps) {
   const [index, setIndex] = useState(0);
   const recipe = recipes[index];
 
@@ -31,12 +41,12 @@ export default function MealSection({ title, targetCalories, recipes, error }: M
         <Notice>{error}</Notice>
       ) : !recipe ? (
         <Notice>
-          No recipes that are safe for your allergies came up this time. New suggestions are fetched every
-          hour, so please check back later.
+          No recipes that are safe for your allergies came up this time. Refresh the page later to try a new
+          set of suggestions.
         </Notice>
       ) : (
         <>
-          <MealCard recipe={recipe} />
+          <MealCard recipe={recipe} mealType={mealType} saved={savedIds.includes(recipe.id)} />
           {recipes.length > 1 && (
             <button
               type="button"

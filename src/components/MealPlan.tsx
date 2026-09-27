@@ -3,6 +3,7 @@
 import MealSection from "@/components/MealSection";
 import type { MealType, NutritionPlan } from "@/lib/nutrition";
 import { type RecipeError, searchRecipes } from "@/lib/recipes";
+import { getSavedRecipeIds } from "@/lib/saved-recipes-server";
 import type { ProfileInput } from "@/lib/validation";
 
 const MEALS: { type: MealType; title: string }[] = [
@@ -27,6 +28,7 @@ interface MealPlanProps {
 
 export default async function MealPlan({ profile, plan }: MealPlanProps) {
   const sections = [];
+  const savedIds = await getSavedRecipeIds();
 
   // One after another, not in parallel: the free plan allows 1 request per second.
   for (const meal of MEALS) {
@@ -40,10 +42,12 @@ export default async function MealPlan({ profile, plan }: MealPlanProps) {
     sections.push(
       <MealSection
         key={meal.type}
+        mealType={meal.type}
         title={meal.title}
         targetCalories={target.calories}
         recipes={result.ok ? result.recipes : []}
         error={result.ok ? undefined : ERROR_MESSAGES[result.error]}
+        savedIds={savedIds}
       />,
     );
   }

@@ -1,5 +1,5 @@
 // Fetches recipes from Spoonacular. Server-only: the API key must never reach the browser.
-// See CLAUDE.md §4.3 (limits) and §5.4 (request).
+// See CLAUDE.md §4.3 (limits, terms) and §5.4 (request).
 
 import "server-only";
 import { filterSafeRecipes } from "@/lib/allergen-safety";
@@ -20,9 +20,6 @@ export type RecipeError =
 
 export type RecipeResult = { ok: true; recipes: Recipe[] } | { ok: false; error: RecipeError };
 
-// Spoonacular allows caching for at most 1 hour.
-const CACHE_SECONDS = 3600;
-
 export async function searchRecipes(search: RecipeSearch): Promise<RecipeResult> {
   // Tolerate common paste mistakes in the dashboard: surrounding spaces, newlines or quotes.
   const apiKey = process.env.SPOONACULAR_API_KEY?.trim().replace(/^["']|["']$/g, "");
@@ -33,7 +30,8 @@ export async function searchRecipes(search: RecipeSearch): Promise<RecipeResult>
 
   const url = `${SPOONACULAR_SEARCH_URL}?${params}`;
   const request = () =>
-    fetch(url, { next: { revalidate: CACHE_SECONDS }, signal: AbortSignal.timeout(10_000) });
+    // No caching: Spoonacular's terms only allow it with their written permission (CLAUDE.md §4.3).
+    fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
 
   let response: Response;
   try {

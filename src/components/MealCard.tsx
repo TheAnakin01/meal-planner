@@ -1,3 +1,5 @@
+import SaveButton from "@/components/SaveButton";
+import type { MealType } from "@/lib/nutrition";
 import type { Recipe } from "@/lib/spoonacular";
 
 // Spoonacular serves several sizes; the default 312x231 looks blurry on phones.
@@ -5,7 +7,13 @@ function largerImage(url: string): string {
   return url.replace(/-\d+x\d+\.(jpg|jpeg|png)$/i, "-556x370.$1");
 }
 
-export default function MealCard({ recipe }: { recipe: Recipe }) {
+interface MealCardProps {
+  recipe: Recipe;
+  mealType: MealType;
+  saved: boolean;
+}
+
+export default function MealCard({ recipe, mealType, saved }: MealCardProps) {
   const stats = [
     { label: "kcal", value: recipe.calories },
     { label: "protein", value: `${recipe.proteinG} g` },
@@ -50,14 +58,22 @@ export default function MealCard({ recipe }: { recipe: Recipe }) {
         </dl>
         <p className="mt-1 text-xs text-zinc-500">Per serving</p>
 
-        <a
-          href={recipe.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-block font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
-        >
-          View full recipe<span className="sr-only"> for {recipe.title} (opens in a new tab)</span> →
-        </a>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <a
+            href={recipe.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+          >
+            View full recipe<span className="sr-only"> for {recipe.title} (opens in a new tab)</span> →
+          </a>
+          <SaveButton
+            // key: reset the button's state when "Show another" swaps the recipe.
+            key={recipe.id}
+            recipe={{ recipeId: recipe.id, title: recipe.title, imageUrl: recipe.imageUrl, mealType }}
+            initiallySaved={saved}
+          />
+        </div>
       </div>
     </article>
   );

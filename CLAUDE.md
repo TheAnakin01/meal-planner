@@ -74,7 +74,9 @@ Meal_Planner/
 │   │   ├── login/page.tsx     # sign in / sign up
 │   │   ├── auth/callback/route.ts   # Supabase email-link callback
 │   │   ├── profile/page.tsx   # profile form (age, weight, ...)
-│   │   └── dashboard/page.tsx # calories, macros, meal recommendations (fetches recipes server-side)
+│   │   └── dashboard/
+│   │       ├── page.tsx       # calories, macros, meal recommendations (fetches recipes server-side)
+│   │       └── saved/         # saved recipes page + save/unsave server action
 │   ├── components/
 │   │   ├── ProfileForm.tsx
 │   │   ├── MacroSummary.tsx
@@ -117,10 +119,14 @@ Meal_Planner/
    card and can bill overages). The **Free** plan needs no card.
 2. Console → **Profile** → copy the **API key** into `.env.local` and Vercel as `SPOONACULAR_API_KEY`.
 3. Free plan limits: **50 points/day** (resets midnight UTC), 1 request/second. When used up the API returns
-   **HTTP 402** until reset — it never charges. Each meal search costs ≈ 1.4 points (measured, §5.4), so ≈ 12 fresh
-   plans/day (fewer thanks to caching repeats).
-4. Terms: a **backlink to spoonacular is required** on the free plan (footer: "Recipes powered by spoonacular");
-   API data may be cached for **at most 1 hour**.
+   **HTTP 402** until reset — it never charges. Each meal search costs ≈ 1.4 points (measured, §5.4), so ≈ 12 plan views/day.
+4. Terms (spoonacular.com/food-api/terms, read 2026-09-27):
+   - A **backlink to spoonacular is required** on the free plan (site footer: "Recipes powered by spoonacular").
+   - **Caching API responses (max 1 hour) needs spoonacular's prior written permission.** We have none, so the app
+     does **not** cache (`cache: "no-store"`). Each plan view costs ≈ 4 points. If the owner gets written permission,
+     switch back to `next: { revalidate: 3600 }` in `src/lib/recipes.ts`.
+   - Only the **recipe id, title and image URL** may be stored permanently (used for saved recipes). Never store
+     ingredients, nutrition, instructions or source URLs.
 
 ### 4.4 Why not Edamam (decision, 2026-09-27)
 The original spec used Edamam. Checked developer.edamam.com on 2026-09-27: **no free plan** (cheapest is $9/month,
@@ -225,13 +231,13 @@ GET https://api.spoonacular.com/recipes/complexSearch
 - Points per meal search: docs suggest ≈ 2.2, but a real call on 2026-09-27 cost **1.36**; a full plan ≈ 4.1 of the 50/day.
 - Fetch a **pool of 6 per meal** in one call; "Show another" rotates through the pool
   (no extra API calls). The dashboard shows one card per meal at a time.
-- Cache each unique query for **1 hour** (`fetch` with `next: { revalidate: 3600 }`) — the maximum Spoonacular allows.
+- **No caching** (`cache: "no-store"`) — see §4.3 terms. On HTTP 429 wait 1.1 s and retry once.
 - Handle errors: 401 (bad key), **402 (daily points used up → "Recipe limit reached for today, try again after
   midnight UTC")**, 429 (too fast), network failure. Never show a recipe that failed the §5.3 checks.
 
 ## 6. Database (Supabase Postgres)
 
-`supabase/migrations/0001_init.sql`:
+`supabase/migrations/0001_init.sql` (then `0002_saved_recipes_spoonacular.sql`):
 
 ```sql
 create table public.profiles (
@@ -247,17 +253,15 @@ create table public.profiles (
   updated_at timestamptz not null default now()
 );
 
-create table public.saved_recipes (
+create table public.saved_recipes (          -- shape after migration 0002 (Spoonacular terms)
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   meal_type text not null check (meal_type in ('breakfast','lunch','dinner')),
-  recipe_uri text not null,
-  label text not null,
-  image_url text,
-  source_url text,
-  calories_per_serving int,
+  recipe_id bigint not null check (recipe_id > 0),   -- Spoonacular recipe id
+  title text not null,
+  image_url text check (image_url like 'https://img.spoonacular.com/%'),
   created_at timestamptz not null default now(),
-  unique (user_id, recipe_uri)
+  unique (user_id, recipe_id)
 );
 
 alter table public.profiles enable row level security;
@@ -311,7 +315,8 @@ Each step ends with a commit + push. Tick boxes as you go.
 - [x] **Step 8 — Recipe API (Spoonacular):** sign up (free, no card), `src/lib/recipes.ts`, caching, error handling.
 - [x] **Step 9 — Allergen safety:** `src/lib/allergen-safety.ts`, two-layer filtering, unit tests (§5.3).
 - [x] **Step 10 — Dashboard UI:** macro summary, meal sections, recipe cards, "Show another", spoonacular backlink.
-- [ ] **Step 11 — Saved recipes (optional):** heart button → `saved_recipes` table, "My saved recipes" list.
+- [x] **Step 11 — Saved recipes (optional):** heart button → `saved_recipes` table (id/title/image only, migration
+      0002), "Saved recipes" page at `/dashboard/saved` (no API calls).
 - [ ] **Step 12 — Polish:** mobile testing (360px, 768px), accessibility, loading/empty/error states, disclaimers.
 - [ ] **Step 13 — Launch check:** add Vercel URL to Supabase redirect URLs, test sign-up → profile → plan on a phone,
       confirm no service is on a paid plan.

@@ -18,17 +18,23 @@ export default async function SiteHeader() {
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-800">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="font-bold text-emerald-600 dark:text-emerald-400">
+        <Link href="/" className="shrink-0 whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400">
           Meal Planner
         </Link>
 
         {email ? (
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3">
             <Link
               href="/dashboard"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950"
+              className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 sm:px-3 dark:text-emerald-300 dark:hover:bg-emerald-950"
             >
               My plan
+            </Link>
+            <Link
+              href="/dashboard/saved"
+              className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 sm:px-3 dark:text-emerald-300 dark:hover:bg-emerald-950"
+            >
+              Saved
             </Link>
             <span className="hidden truncate text-sm text-zinc-600 sm:inline dark:text-zinc-400">
               {email}
@@ -36,7 +42,7 @@ export default async function SiteHeader() {
             <form action={signOut}>
               <button
                 type="submit"
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="rounded-lg border border-zinc-300 px-2 py-2 text-sm font-medium hover:bg-zinc-100 sm:px-3 dark:border-zinc-700 dark:hover:bg-zinc-800"
               >
                 Sign out
               </button>
@@ -45,7 +51,7 @@ export default async function SiteHeader() {
         ) : (
           <Link
             href="/login"
-            className="rounded-lg px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950"
+            className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 sm:px-3 dark:text-emerald-300 dark:hover:bg-emerald-950"
           >
             Sign in
           </Link>
